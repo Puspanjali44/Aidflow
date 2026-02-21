@@ -1,0 +1,198 @@
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: #061826;
+  color: white;
+}
+
+/* LAYOUT */
+.ngo-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: 240px;
+  background: #0c2436;
+  padding: 30px 20px;
+}
+
+.sidebar h2 {
+  margin-bottom: 0;
+}
+
+.portal {
+  font-size: 12px;
+  opacity: 0.6;
+  margin-bottom: 30px;
+}
+
+.sidebar nav a {
+  display: block;
+  padding: 10px 0;
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+.sidebar nav .active {
+  color: #2dd4bf;
+  font-weight: bold;
+}
+
+/* MAIN */
+.main {
+  flex: 1;
+  padding: 40px;
+}
+
+/* HEADER */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.new-btn {
+  background: #2dd4bf;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* TABS */
+.tabs {
+  margin: 20px 0;
+}
+
+.tab {
+  background: #102a3f;
+  border: none;
+  padding: 8px 16px;
+  margin-right: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: white;
+}
+
+.tab.active {
+  background: #2dd4bf;
+  color: #061826;
+}
+
+/* PROJECT CARD */
+.project-card {
+  background: #0e2b40;
+  padding: 25px;
+  border-radius: 16px;
+  margin-bottom: 25px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.badge {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.badge.active {
+  background: #16a34a;
+}
+
+.badge.draft {
+  background: #facc15;
+  color: black;
+}
+
+.badge.completed {
+  background: #3b82f6;
+}
+
+.desc {
+  opacity: 0.8;
+  margin: 10px 0 20px;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.stats div span {
+  display: block;
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+/* PROGRESS */
+.progress-bar {
+  height: 8px;
+  background: #12344d;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress {
+  height: 100%;
+  background: #2dd4bf;
+}
+
+.funded {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 6px;
+}
+
+/* ACTIONS */
+.actions {
+  margin-top: 20px;
+}
+
+.actions button {
+  margin-right: 10px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #2dd4bf;
+  background: transparent;
+  color: #2dd4bf;
+  cursor: pointer;
+}
+
+.actions .primary {
+  background: #2dd4bf;
+  color: #061826;
+  border: none;
+}
+.project-card {
+  background: #0f2e45;
+  padding: 20px;
+  border-radius: 14px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+.progress-bar {
+  height: 8px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 6px;
+  margin: 10px 0;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(135deg, #2fa79a, #1f7a84);
+  transition: 0.4s;
+}
+.action-btn.edit {
+  background: #3f51b5;
+  color: white;
+}

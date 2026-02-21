@@ -1,0 +1,157 @@
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: linear-gradient(135deg, #0f766e, #2dd4bf);
+  height: 100vh;
+}
+
+.app {
+  text-align: center;
+  color: white;
+  padding-top: 40px;
+}
+
+.brand img {
+  width: 70px;
+  margin-bottom: 10px;
+}
+
+.brand h1 {
+  font-size: 48px;
+  margin: 0;
+}
+
+.brand p {
+  margin-top: 8px;
+  opacity: 0.9;
+}
+
+.toggle {
+  margin: 25px 0;
+}
+
+.toggle button {
+  border: none;
+  padding: 10px 26px;
+  margin: 0 8px;
+  border-radius: 30px;
+  cursor: pointer;
+  font-size: 16px;
+  background: transparent;
+  border: 2px solid rgba(255,255,255,0.6);
+  color: white;
+}
+
+.toggle .active {
+  background: white;
+  color: #0f766e;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-top: 20px;
+}
+
+.card {
+  background: rgba(0,0,0,0.2);
+  padding: 30px;
+  width: 300px;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.card h2 {
+  margin-bottom: 20px;
+}
+
+.card input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+}
+
+.primary {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: #2dd4bf;
+  color: #064e3b;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.forgot {
+  font-size: 13px;
+  opacity: 0.8;
+  display: block;
+  text-align: left;
+}
+/* ===== SUCCESS POPUP ===== */
+
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.popup {
+  background: #0f5c63;
+  padding: 30px 40px;
+  border-radius: 16px;
+  text-align: center;
+  width: 320px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+  color: white;
+  animation: popIn 0.25s ease;
+}
+
+.popup h3 {
+  margin-bottom: 10px;
+}
+
+.popup p {
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.popup button {
+  margin-top: 18px;
+  padding: 10px 26px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(90deg,#2ed6c5,#1fb5ad);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.popup button:hover {
+  transform: scale(1.05);
+}
+
+/* animation */
+@keyframes popIn {
+  from {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

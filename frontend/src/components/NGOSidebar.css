@@ -1,0 +1,37 @@
+.ngo-sidebar {
+  width: 250px;
+  background: #0d2a3b;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-logo {
+  color: #00c896;
+  margin-bottom: 40px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sidebar-nav a {
+  text-decoration: none;
+  color: #a7c4d4;
+  font-weight: 500;
+  transition: 0.2s;
+}
+
+.sidebar-nav a:hover {
+  color: #00c896;
+}
+
+.logout-btn {
+  background: #00c896;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+}

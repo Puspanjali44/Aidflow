@@ -1,0 +1,480 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* ===== BASE ===== */
+body {
+  margin: 0;
+  font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+  background: #060E1A;
+}
+
+/* ============================================================
+   WRAPPER
+   ============================================================ */
+.login-wrapper {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ============================================================
+   LEFT SECTION  (#4 Glass + #10 Dot texture)
+   ============================================================ */
+.left-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  text-align: center;
+  padding: 60px 48px;
+  position: relative;
+  overflow: hidden;
+
+  /* Dark base — glass will layer on top */
+  background: linear-gradient(160deg, #071624 0%, #0B2235 50%, #071624 100%);
+  border-right: 1px solid rgba(45, 212, 191, 0.08);
+}
+
+/* #10 Dot-grid texture */
+.left-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(
+    circle,
+    rgba(45, 212, 191, 0.09) 1px,
+    transparent 1px
+  );
+  background-size: 28px 28px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* #4 Teal radial glow — top-left */
+.left-section::after {
+  content: '';
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(45, 212, 191, 0.10) 0%,
+    transparent 65%
+  );
+  top: -120px;
+  left: -120px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Bottom-right glow blob (extra depth) */
+.left-section > *:last-child + span,
+.left-section > p:last-of-type::after {
+  display: none; /* placeholder, glow via wrapper below */
+}
+
+/* All left-section children above pseudo layers */
+.left-section > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   LOGO
+   ============================================================ */
+.logo {
+  width: 78px;
+  height: 78px;
+  margin-bottom: 26px;
+  border-radius: 20px;
+  /* #4 glassy card for logo */
+  background: rgba(45, 212, 191, 0.08);
+  border: 1px solid rgba(45, 212, 191, 0.15);
+  padding: 10px;
+  box-sizing: border-box;
+  object-fit: contain;
+  backdrop-filter: blur(8px);
+  filter: drop-shadow(0 8px 28px rgba(45, 212, 191, 0.22));
+  transition: transform 0.3s, filter 0.3s;
+}
+
+.logo:hover {
+  transform: scale(1.05);
+  filter: drop-shadow(0 12px 36px rgba(45, 212, 191, 0.35));
+}
+
+/* ============================================================
+   LEFT HEADINGS  (#7 Typography)
+   ============================================================ */
+.left-section h1 {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin: 0 0 16px;
+  color: #EEF4FF;
+  line-height: 1.1;
+}
+
+.left-section p {
+  font-size: 14.5px;
+  color: rgba(255, 255, 255, 0.38);
+  margin: 5px 0;
+  line-height: 1.6;
+}
+
+/* First <p> — tagline, highlighted teal */
+.left-section p:first-of-type {
+  font-size: 15px;
+  color: #2dd4bf;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+/* Last <p> — pill badge */
+.left-section p:last-of-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 30px;
+  background: rgba(45, 212, 191, 0.07);
+  border: 1px solid rgba(45, 212, 191, 0.14);
+  padding: 9px 22px;
+  border-radius: 99px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+  backdrop-filter: blur(8px);
+}
+
+/* ============================================================
+   RIGHT SECTION
+   ============================================================ */
+.right-section {
+  flex: 1;
+  background: #060E1A;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+}
+
+/* ============================================================
+   LOGIN CARD  (#4 Glassmorphism)
+   ============================================================ */
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  padding: 42px 40px;
+  border-radius: 22px;
+  color: white;
+  position: relative;
+  overflow: hidden;
+
+  /* #4 Glass */
+  background: rgba(12, 29, 46, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(45, 212, 191, 0.09);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.025),
+    0 28px 72px rgba(0, 0, 0, 0.5),
+    0 0 80px rgba(45, 212, 191, 0.04);
+}
+
+/* Teal top-border accent */
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #2dd4bf 40%,
+    rgba(45, 212, 191, 0.3) 70%,
+    transparent 100%
+  );
+  border-radius: 22px 22px 0 0;
+}
+
+/* ============================================================
+   CARD HEADING  (#7 Typography)
+   ============================================================ */
+.login-card h2 {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 800;
+  color: #EEF4FF;
+  letter-spacing: -0.5px;
+  margin: 0 0 6px;
+}
+
+.subtitle {
+  text-align: center;
+  font-size: 13px;
+  color: #2D4A5A;
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   ROLE TOGGLE
+   ============================================================ */
+.role-toggle {
+  display: flex;
+  background: rgba(6, 14, 26, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 20px;
+  gap: 4px;
+}
+
+.role-toggle button {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: #2D4A5A;
+  padding: 9px;
+  cursor: pointer;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: all 0.2s;
+
+  /* Override generic button styles */
+  width: auto;
+  margin-top: 0;
+  box-shadow: none;
+}
+
+.role-toggle button:hover {
+  color: #9ecfcf;
+  background: rgba(45, 212, 191, 0.05);
+}
+
+.role-toggle .active {
+  background: rgba(45, 212, 191, 0.12);
+  color: #2dd4bf;
+  border: 1px solid rgba(45, 212, 191, 0.22);
+}
+
+/* ============================================================
+   INPUTS  (#1 Focus micro-animation)
+   ============================================================ */
+.login-card input {
+  width: 100%;
+  padding: 12px 15px;
+  margin: 8px 0;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(6, 14, 26, 0.7);
+  color: #EEF4FF;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+
+.login-card input::placeholder {
+  color: #1A3040;
+}
+
+/* #1 Lift + ring on focus */
+.login-card input:focus {
+  border-color: rgba(45, 212, 191, 0.45);
+  box-shadow:
+    0 0 0 3px rgba(45, 212, 191, 0.08),
+    0 4px 14px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   PRIMARY BUTTON  (#1 Shimmer + lift)
+   ============================================================ */
+.primary-btn {
+  width: 100%;
+  padding: 13px;
+  margin-top: 18px;
+  border-radius: 11px;
+  border: none;
+  background: linear-gradient(135deg, #2dd4bf, #14b8a6);
+  color: #060E1A;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: all 0.2s;
+  box-shadow:
+    0 2px 14px rgba(45, 212, 191, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Shimmer sweep */
+.primary-btn::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; bottom: 0;
+  width: 60%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.18),
+    transparent
+  );
+  animation: btnShimmer 3s ease-in-out infinite;
+}
+
+@keyframes btnShimmer {
+  0%      { left: -60%; }
+  60%,100% { left: 130%; }
+}
+
+.primary-btn:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 28px rgba(45, 212, 191, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  opacity: 1;
+}
+
+.primary-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(45, 212, 191, 0.28);
+}
+
+/* ============================================================
+   EXTRA LINKS
+   ============================================================ */
+.extra-links {
+  margin-top: 22px;
+  text-align: center;
+}
+
+.extra-links span {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #2D4A5A;
+}
+
+/* ============================================================
+   SECONDARY BUTTON
+   ============================================================ */
+.secondary-btn {
+  width: auto;
+  min-width: 120px;
+  padding: 9px 22px;
+  border-radius: 9px;
+  border: 1px solid rgba(45, 212, 191, 0.22);
+  background: rgba(45, 212, 191, 0.07);
+  color: #2dd4bf;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 0;
+  box-shadow: none;
+}
+
+.secondary-btn:hover {
+  background: rgba(45, 212, 191, 0.13);
+  border-color: rgba(45, 212, 191, 0.38);
+  transform: translateY(-1px);
+  opacity: 1;
+}
+
+/* ============================================================
+   LINK BUTTON (legacy)
+   ============================================================ */
+.link-btn {
+  background: none;
+  border: none;
+  color: #2dd4bf;
+  margin-left: 5px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: opacity 0.15s;
+  padding: 0;
+}
+
+.link-btn:hover {
+  opacity: 0.7;
+}
+
+/* ============================================================
+   SKELETON LOADER  (#1 — reusable utility)
+   ============================================================ */
+@keyframes skeletonShimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+
+.skeleton-line {
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    #0f2336 25%,
+    #162d42 50%,
+    #0f2336 75%
+  );
+  background-size: 600px 100%;
+  animation: skeletonShimmer 1.6s ease-in-out infinite;
+}
+
+/* ============================================================
+   MODAL OVERLAY
+   ============================================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+  z-index: 999;
+  animation: fadeIn 0.18s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal {
+  background: rgba(12, 29, 46, 0.92);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(45, 212, 191, 0.14);
+  padding: 32px;
+  border-radius: 20px;
+  width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.55);
+  color: white;
+  animation: slideUp 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 4px;
+}

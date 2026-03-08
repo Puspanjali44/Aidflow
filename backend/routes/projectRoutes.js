@@ -14,6 +14,22 @@ const {
   resumeProject
 } = require("../controllers/project.controller");
 
+// Public - Get all active projects
+router.get("/public", async (req, res) => {
+  try {
+    const projects = await require("../models/Project")
+      .find({ status: "active" })
+      .populate({
+        path: "ngo",
+        select: "organizationName category description"
+      });
+
+    res.json(projects);
+  } catch (error) {
+    console.error("PUBLIC PROJECT ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 // ================= NGO ROUTES =================
 

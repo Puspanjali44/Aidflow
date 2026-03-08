@@ -143,7 +143,25 @@ body {
 .popup button:hover {
   transform: scale(1.05);
 }
+.dashboard-wrapper {
+  display: flex;
+  min-height: 100vh;
+}
 
+.dashboard-content {
+  flex: 1;
+  background: #f5f7fa;
+  padding: 40px;
+  color: #0d2a3b;
+}
+
+.donation-card {
+  background: #ffffff;
+  padding: 20px;
+  margin-top: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
 /* animation */
 @keyframes popIn {
   from {

@@ -29,7 +29,7 @@ function LoginPage() {
         localStorage.setItem("token", data.token);
         localStorage.setItem("role", data.role);
 
-        if (data.role === "donor") navigate("/dashboard");
+        if (data.role === "donor") navigate("/donor-dashboard");
         else navigate("/ngo-dashboard");
       } else {
         alert(data.message);

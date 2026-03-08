@@ -12,17 +12,42 @@ function NGOSidebar() {
 
   return (
     <div className="ngo-sidebar">
-      <h2 className="sidebar-logo">AidFlow</h2>
-
-      <div className="sidebar-nav">
-        <NavLink to="/ngo-dashboard">Dashboard</NavLink>
-        <NavLink to="/ngo-projects">My Projects</NavLink>
-        <NavLink to="/create-project">Create Project</NavLink>
-        <NavLink to="/settings">Settings</NavLink>
+      <div className="sidebar-header">
+        
+        <div>
+          <h2>AidFlow</h2>
+          <p className="portal-text">NGO Portal</p>
+        </div>
       </div>
 
+      <div className="sidebar-section">
+        <p className="section-title">NAVIGATION</p>
+
+        <NavLink to="/ngo-dashboard" className="nav-item">
+          Dashboard
+        </NavLink>
+
+        <NavLink to="/ngo-projects" className="nav-item">
+          My Projects
+        </NavLink>
+
+        <NavLink to="/create-project" className="nav-item">
+          Create Project
+        </NavLink>
+
+        <NavLink to="/settings" className="nav-item">
+          Settings
+        </NavLink>
+
+        <NavLink to="/Analytics" className="nav-item">
+          Analytics
+        </NavLink>
+      </div>
+
+      
+
       <button className="logout-btn" onClick={handleLogout}>
-        Logout
+        Sign Out
       </button>
     </div>
   );

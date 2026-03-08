@@ -1,38 +1,87 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import DonorSidebar from "./components/DonorSidebar";
 import "./Dashboard.css";
+import axios from "axios";
 
 function DonorDashboard() {
+  const [donations, setDonations] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDonations();
+  }, []);
+
+  const fetchDonations = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setDonations([]);
+        setLoading(false);
+        return;
+      }
+
+      const res = await axios.get("http://localhost:5000/api/donations/my", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setDonations(res.data || []);
+    } catch (error) {
+      console.error("Error fetching donations", error);
+      setDonations([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const totalDonated = donations.reduce((sum, d) => sum + (d.amount || 0), 0);
+  const projectsCount = new Set(donations.map((d) => d.project?._id)).size;
+
   return (
-    <div className="dashboard">
+    <div className="dashboard-wrapper">
+      <DonorSidebar />
 
-      <aside className="sidebar">
-        <h2>AidFlow</h2>
-        <ul>
-          <li><Link to="/dashboard">Dashboard</Link></li>
-          <li><Link to="/browse">Browse NGOs</Link></li>
-          <li><Link to="/donations">My Donations</Link></li>
-          <li><Link to="/badges">Badges</Link></li>
-          <li><Link to="/settings">Settings</Link></li>
-        </ul>
-      </aside>
-
-      <main className="main">
+      <div className="dashboard-content">
         <h1>Welcome Back, Donor!</h1>
 
         <div className="stats">
-          <div className="card">$1,240<br/>Total Donations</div>
-          <div className="card">12<br/>Projects</div>
-          <div className="card">480<br/>Impact Points</div>
+          <div className="card">
+            Rs. {totalDonated.toLocaleString()}
+            <br />
+            Total Donations
+          </div>
+
+          <div className="card">
+            {projectsCount}
+            <br />
+            Projects
+          </div>
+
+          <div className="card">
+            {donations.length}
+            <br />
+            Donations
+          </div>
         </div>
 
         <h2>Recent Donations</h2>
 
-        <div className="donation">Education for Rural Kids</div>
-        <div className="donation">Earthquake Relief Nepal</div>
-        <div className="donation">Women Empowerment Project</div>
-      </main>
-
+        {loading ? (
+          <p>Loading...</p>
+        ) : donations.length === 0 ? (
+          <p>No donations yet.</p>
+        ) : (
+          donations.slice(0, 5).map((donation) => (
+            <div key={donation._id} className="donation">
+              <strong>{donation.project?.title || "(No project)"}</strong>
+              <div>NGO: {donation.project?.ngo?.organizationName || "-"}</div>
+              <div>Amount: Rs. {donation.amount}</div>
+              <div>
+                Date: {new Date(donation.createdAt).toLocaleDateString()}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }

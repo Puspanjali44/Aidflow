@@ -1,86 +1,454 @@
-.dashboard {
-  display: flex;
-  height: 100vh;
-  background: #eef3f4;
-  font-family: "Segoe UI", sans-serif;
-  color: #083c44;
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* ============================================================
+   HARD RESET — forces dark background everywhere
+   ============================================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-/* SIDEBAR */
+html,
+body,
+#root {
+  background: #060E1A !important;
+  min-height: 100vh;
+  font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+  color: #EEF4FF;
+}
+
+/* ============================================================
+   SHELL
+   ============================================================ */
+.dashboard {
+  display: flex;
+  min-height: 100vh;
+  background: #060E1A;
+  font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+  color: #EEF4FF;
+}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
 .sidebar {
   width: 240px;
-  background: linear-gradient(180deg, #1f7a84, #155f67);
+  background: #0A1628;
   color: white;
-  padding: 30px 20px;
+  padding: 28px 16px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(45, 212, 191, 0.07);
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  flex-shrink: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(45, 212, 191, 0.2) transparent;
+}
+
+.sidebar::-webkit-scrollbar        { width: 3px; }
+.sidebar::-webkit-scrollbar-track  { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb  {
+  background: rgba(45, 212, 191, 0.2);
+  border-radius: 99px;
 }
 
 .sidebar h2 {
-  margin-bottom: 30px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 800;
+  color: #2dd4bf;
+  letter-spacing: -0.4px;
+  margin: 0 0 28px;
+  padding: 0 8px;
 }
 
 .sidebar ul {
   list-style: none;
   padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.sidebar li {
-  margin: 18px 0;
-}
+.sidebar li { margin: 0; }
 
 .sidebar a {
-  color: white;
+  display: block;
+  padding: 10px 12px 10px 16px;
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #7BAABB;
   text-decoration: none;
-  font-size: 15px;
-  transition: 0.2s ease;
+  transition: all 0.18s;
+  position: relative;
 }
 
 .sidebar a:hover {
-  opacity: 0.7;
+  color: #9ecfcf;
+  background: rgba(45, 212, 191, 0.06);
+  opacity: 1;
 }
 
-/* MAIN CONTENT */
+.sidebar a.active {
+  color: #2dd4bf;
+  font-weight: 700;
+  background: rgba(45, 212, 191, 0.09);
+}
+
+.sidebar a.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: #2dd4bf;
+  box-shadow: 0 0 8px rgba(45, 212, 191, 0.5);
+}
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
 .main {
   flex: 1;
-  padding: 40px;
+  padding: 40px 44px;
   overflow-y: auto;
+  background: #060E1A;
+  min-height: 100vh;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(45, 212, 191, 0.12) transparent;
+}
+
+.main::-webkit-scrollbar       { width: 4px; }
+.main::-webkit-scrollbar-track { background: transparent; }
+.main::-webkit-scrollbar-thumb {
+  background: rgba(45, 212, 191, 0.15);
+  border-radius: 99px;
 }
 
 .main h1 {
-  margin-bottom: 20px;
+  font-size: 28px;
+  font-weight: 800;
+  color: #EEF4FF;
+  letter-spacing: -0.6px;
+  margin: 0 0 28px;
+  font-variant-numeric: tabular-nums;
 }
 
-/* STATS */
+.main h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #7BAABB;
+  margin: 0 0 16px;
+}
+
+/* ============================================================
+   STATS CARDS
+   ============================================================ */
 .stats {
   display: flex;
-  gap: 25px;
-  margin: 25px 0 35px;
+  gap: 20px;
+  margin: 0 0 40px;
 }
 
 .card {
   flex: 1;
-  background: #dce8ea;
-  padding: 25px;
+  background: #112236;
+  padding: 26px 28px;
   border-radius: 16px;
-  font-size: 18px;
-  font-weight: 600;
-  transition: 0.3s ease;
+  font-size: 28px;
+  font-weight: 800;
+  color: #EEF4FF;
+  letter-spacing: -0.6px;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  transition: transform 0.22s, border-color 0.22s, box-shadow 0.22s;
+  position: relative;
+  overflow: hidden;
+}
+
+.card:nth-child(1)::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #2dd4bf, transparent);
+}
+
+.card:nth-child(2)::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #818CF8, transparent);
+}
+
+.card:nth-child(3)::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #FBBF24, transparent);
+}
+
+.card:nth-child(1)::after { content: '💰'; }
+.card:nth-child(2)::after { content: '📋'; }
+.card:nth-child(3)::after { content: '⭐'; }
+
+.card:nth-child(1)::after,
+.card:nth-child(2)::after,
+.card:nth-child(3)::after {
+  position: absolute;
+  right: 18px;
+  bottom: 10px;
+  font-size: 64px;
+  opacity: 0.05;
+  pointer-events: none;
+  line-height: 1;
+}
+
+.card span {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #4A8A9A;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 10px;
+  font-variant-numeric: normal;
 }
 
 .card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-4px);
+  border-color: rgba(45, 212, 191, 0.2);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.4);
 }
 
-/* DONATIONS */
+/* ============================================================
+   DONATION CARDS — fixed contrast
+   ============================================================ */
 .donation {
-  background: white;
-  padding: 18px;
-  margin: 15px 0;
+  background: #112236;
+  padding: 20px 24px;
+  margin: 0 0 12px;
   border-radius: 14px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.05);
-  transition: 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.22s, box-shadow 0.22s, transform 0.22s;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Left-edge teal accent on hover */
+.donation::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #2dd4bf, rgba(45, 212, 191, 0.2));
+  opacity: 0;
+  transition: opacity 0.22s;
 }
 
 .donation:hover {
-  transform: scale(1.01);
+  transform: scale(1.01) translateY(-2px);
+  border-color: rgba(45, 212, 191, 0.22);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.donation:hover::before {
+  opacity: 1;
+}
+
+/* ============================================================
+   DONATION TEXT — clearly readable
+   ============================================================ */
+
+/* Project / NGO name */
+.donation p,
+.donation-ngo {
+  font-size: 15px;
+  font-weight: 700;
+  color: #EEF4FF;
+  margin: 0 0 4px;
+  letter-spacing: -0.2px;
+}
+
+/* NGO sub-line */
+.donation-project {
+  font-size: 13px;
+  color: #4A8A9A;
+  font-weight: 500;
+  margin: 0 0 10px;
+}
+
+/* Amount */
+.donation-amount {
+  font-size: 17px;
+  font-weight: 800;
+  color: #2dd4bf;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.3px;
+}
+
+/* Date */
+.donation-date {
+  font-size: 11px;
+  font-weight: 700;
+  color: #2D4A5A;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  margin-top: 8px;
+  display: block;
+}
+
+/* ============================================================
+   SKELETON LOADER
+   ============================================================ */
+@keyframes skeletonShimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+
+.skeleton-card {
+  background: #112236;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-line {
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    #132640 25%,
+    #1a3050 50%,
+    #132640 75%
+  );
+  background-size: 600px 100%;
+  animation: skeletonShimmer 1.6s ease-in-out infinite;
+}
+
+.skeleton-line.title { height: 16px; width: 50%; }
+.skeleton-line.text  { height: 12px; width: 80%; }
+.skeleton-line.short { height: 12px; width: 35%; }
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 64px 40px;
+  text-align: center;
+  gap: 10px;
+  color: #1E3545;
+}
+
+.empty-state::before {
+  content: '🤝';
+  font-size: 48px;
+  opacity: 0.25;
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+  z-index: 999;
+  animation: fadeIn 0.18s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal {
+  background: #112236;
+  border: 1px solid rgba(45, 212, 191, 0.14);
+  padding: 32px;
+  border-radius: 20px;
+  width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.55);
+  color: white;
+  animation: slideUp 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn-primary {
+  padding: 11px 24px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2dd4bf, #14b8a6);
+  border: none;
+  color: #060E1A;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 12px rgba(45, 212, 191, 0.28);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 26px rgba(45, 212, 191, 0.4);
+}
+
+.btn-ghost {
+  padding: 11px 20px;
+  border-radius: 10px;
+  background: rgba(45, 212, 191, 0.07);
+  border: 1px solid rgba(45, 212, 191, 0.22);
+  color: #2dd4bf;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.btn-ghost:hover {
+  background: rgba(45, 212, 191, 0.13);
+  transform: translateY(-1px);
 }

@@ -1,0 +1,319 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* ============================================================
+   SETTINGS CONTAINER
+   ============================================================ */
+.settings-container {
+  padding: 40px 44px;
+  color: white;
+  font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+  max-width: 780px;
+}
+
+/* ============================================================
+   SECTION BOX
+   ============================================================ */
+.settings-section {
+  background: #0E2035;
+  padding: 28px 32px;
+  border-radius: 16px;
+  margin-bottom: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+/* Teal top-border accent */
+.settings-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(45, 212, 191, 0.5), transparent);
+  border-radius: 16px 16px 0 0;
+}
+
+.settings-section:hover {
+  border-color: rgba(45, 212, 191, 0.12);
+}
+
+/* Danger zone override */
+.settings-section.danger-zone {
+  background: #160D14;
+  border-color: rgba(239, 68, 68, 0.15);
+}
+
+.settings-section.danger-zone::before {
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.4), transparent);
+}
+
+/* ============================================================
+   SECTION HEADING
+   ============================================================ */
+.settings-section h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2dd4bf;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  margin: 0 0 22px;
+}
+
+/* ============================================================
+   INPUTS & TEXTAREA — constrained width
+   ============================================================ */
+.settings-section input,
+.settings-section textarea {
+  width: 100%;
+  max-width: 420px;           /* ← stops inputs from stretching too wide */
+  padding: 11px 14px;
+  margin-bottom: 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: #081624;
+  color: #EEF4FF;
+  font-size: 13.5px;
+  font-family: inherit;
+  outline: none;
+  display: block;
+  box-sizing: border-box;
+  transition: border-color 0.18s, box-shadow 0.18s, transform 0.15s;
+}
+
+.settings-section input::placeholder,
+.settings-section textarea::placeholder {
+  color: #1A3040;
+}
+
+.settings-section input:focus,
+.settings-section textarea:focus {
+  border-color: rgba(45, 212, 191, 0.45);
+  box-shadow:
+    0 0 0 3px rgba(45, 212, 191, 0.08),
+    0 4px 14px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+.settings-section textarea {
+  min-height: 90px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+/* Disabled */
+.settings-section input:disabled {
+  background: #0C1D2C;
+  color: #2D4A5A;
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.04);
+  transform: none;
+}
+
+/* ============================================================
+   SAVE BUTTON
+   ============================================================ */
+.save-btn {
+  margin-top: 6px;
+  background: linear-gradient(135deg, #2dd4bf, #14b8a6);
+  color: #060E1A;
+  border: none;
+  padding: 11px 26px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  transition: all 0.2s;
+  box-shadow: 0 2px 12px rgba(45, 212, 191, 0.28);
+  position: relative;
+  overflow: hidden;
+}
+
+.save-btn::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; bottom: 0;
+  width: 60%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+  animation: btnShimmer 3s ease-in-out infinite;
+}
+
+@keyframes btnShimmer {
+  0%        { left: -60%;  }
+  60%, 100% { left: 130%; }
+}
+
+.save-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(45, 212, 191, 0.38);
+}
+
+.save-btn:active {
+  transform: translateY(0);
+}
+
+.save-btn:disabled {
+  background: #0E2035;
+  color: #2D4A5A;
+  border: 1px solid rgba(255,255,255,0.07);
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.save-btn:disabled::after {
+  display: none;
+}
+
+/* ============================================================
+   DOCUMENT CARD
+   ============================================================ */
+.document-card {
+  background: #081624;
+  padding: 14px 18px;
+  border-radius: 11px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: border-color 0.18s;
+}
+
+.document-card:hover {
+  border-color: rgba(45, 212, 191, 0.14);
+}
+
+.document-card span {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #EEF4FF;
+}
+
+/* ============================================================
+   STATUS BADGE
+   ============================================================ */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 11px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.status-badge.verified {
+  background: rgba(34, 197, 94, 0.10);
+  color: #22C55E;
+  border: 1px solid rgba(34, 197, 94, 0.22);
+}
+
+.status-badge.verified::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22C55E;
+  flex-shrink: 0;
+  display: inline-block;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1;   transform: scale(1);    }
+  50%       { opacity: 0.3; transform: scale(0.75); }
+}
+
+.status-badge.pending {
+  background: rgba(251, 191, 36, 0.10);
+  color: #FBBF24;
+  border: 1px solid rgba(251, 191, 36, 0.22);
+}
+
+/* ============================================================
+   UPLOAD BOX
+   ============================================================ */
+.upload-box {
+  border: 2px dashed rgba(45, 212, 191, 0.2);
+  padding: 32px 24px;
+  text-align: center;
+  border-radius: 12px;
+  margin-top: 16px;
+  background: rgba(45, 212, 191, 0.03);
+  color: #2D4A5A;
+  font-size: 13.5px;
+  transition: all 0.2s;
+  cursor: pointer;
+  max-width: 420px;             /* matches input width */
+}
+
+.upload-box:hover {
+  border-color: rgba(45, 212, 191, 0.4);
+  background: rgba(45, 212, 191, 0.06);
+  color: #9ecfcf;
+}
+
+/* ============================================================
+   DANGER ZONE
+   ============================================================ */
+.danger-zone {
+  border: 1px solid rgba(239, 68, 68, 0.15) !important;
+  background: #160D14 !important;
+}
+
+.danger-zone h3 {
+  color: #F87171 !important;
+}
+
+.danger-buttons {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   DANGER BUTTONS
+   ============================================================ */
+.pause-btn {
+  padding: 9px 18px;
+  border-radius: 9px;
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  background: rgba(251, 191, 36, 0.08);
+  color: #FBBF24;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.18s;
+}
+
+.pause-btn:hover {
+  background: rgba(251, 191, 36, 0.15);
+  transform: translateY(-1px);
+}
+
+.deactivate-btn {
+  padding: 9px 18px;
+  border-radius: 9px;
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  background: rgba(239, 68, 68, 0.08);
+  color: #F87171;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.18s;
+}
+
+.deactivate-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  transform: translateY(-1px);
+}

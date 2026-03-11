@@ -1,0 +1,65 @@
+.analytics-container {
+  padding: 40px;
+  background: #f6f8f7;
+  min-height: 100vh;
+  font-family: "Segoe UI", sans-serif;
+}
+
+.analytics-title {
+  font-size: 34px;
+  margin-bottom: 30px;
+  color: #1e5631;
+}
+
+/* GRID */
+.analytics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.analytics-card {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+/* CHART PLACEHOLDER */
+.chart-placeholder {
+  height: 220px;
+  border-radius: 10px;
+  margin-top: 15px;
+  background: linear-gradient(
+    to top,
+    rgba(30, 86, 49, 0.2),
+    rgba(30, 86, 49, 0.05)
+  );
+}
+
+/* TABLE */
+.table-card {
+  margin-top: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+thead {
+  background: #f1f5f4;
+}
+
+th, td {
+  padding: 14px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+td:last-child {
+  color: #1e5631;
+  font-weight: 600;
+}

@@ -1,21 +1,42 @@
-
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 
 const app = express();
 
-
+// ======================
+// Middlewares
+// ======================
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
+// ======================
+// Routes
+// ======================
 const authRoutes = require("./routes/authRoutes");
 const ngoRoutes = require("./routes/ngoRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const donationRoutes = require("./routes/donationRoutes");
-app.use("/api/donations", donationRoutes);
+const updateRoutes = require("./routes/updateRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/ngo", ngoRoutes);
 app.use("/api/projects", projectRoutes);
+app.use("/api/donations", donationRoutes);
+app.use("/api/updates", updateRoutes);
 
+// ======================
+// Static Uploads Folder
+// ======================
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// ======================
+// Default Route (optional but good)
+ // ======================
+app.get("/", (req, res) => {
+  res.send("AidFlow API Running...");
+});
+
+// ======================
 module.exports = app;

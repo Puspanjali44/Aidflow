@@ -10,10 +10,17 @@ function NGOSidebar() {
     navigate("/");
   };
 
+  const navItems = [
+    { path: "/ngo-dashboard", label: "Dashboard" },
+    { path: "/ngo-projects", label: "My Projects" },
+    { path: "/create-project", label: "Create Project" },
+    { path: "/settings", label: "Settings" },
+    { path: "/Analytics", label: "Analytics" },
+  ];
+
   return (
     <div className="ngo-sidebar">
       <div className="sidebar-header">
-        
         <div>
           <h2>AidFlow</h2>
           <p className="portal-text">NGO Portal</p>
@@ -21,30 +28,14 @@ function NGOSidebar() {
       </div>
 
       <div className="sidebar-section">
-        <p className="section-title">NAVIGATION</p>
+        <p className="section-title">Navigation</p>
 
-        <NavLink to="/ngo-dashboard" className="nav-item">
-          Dashboard
-        </NavLink>
-
-        <NavLink to="/ngo-projects" className="nav-item">
-          My Projects
-        </NavLink>
-
-        <NavLink to="/create-project" className="nav-item">
-          Create Project
-        </NavLink>
-
-        <NavLink to="/settings" className="nav-item">
-          Settings
-        </NavLink>
-
-        <NavLink to="/Analytics" className="nav-item">
-          Analytics
-        </NavLink>
+        {navItems.map(({ path, label }) => (
+          <NavLink key={path} to={path} className="nav-item">
+            {label}
+          </NavLink>
+        ))}
       </div>
-
-      
 
       <button className="logout-btn" onClick={handleLogout}>
         Sign Out

@@ -1,0 +1,310 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+/* ============================================================
+   MY DONATIONS PAGE
+   ============================================================ */
+.mydon-wrapper {
+  display: flex;
+  min-height: 100vh;
+  background: #faf8f4;
+}
+
+.mydon-content {
+  flex: 1;
+  padding: 36px 44px;
+  overflow-y: auto;
+}
+
+.mydon-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 30px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 6px;
+}
+
+.mydon-subtitle {
+  font-size: 15px;
+  color: #7a7a7a;
+  margin: 0 0 32px;
+}
+
+/* ============================================================
+   3 SUMMARY STAT CARDS
+   ============================================================ */
+.mydon-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.mydon-stat {
+  background: #ffffff;
+  border: 1px solid #e5e2db;
+  border-radius: 14px;
+  padding: 24px 28px;
+}
+
+.mydon-stat.green-stat {
+  background: linear-gradient(135deg, #1e5631, #2d6a4f);
+  border: none;
+  color: white;
+}
+
+.mydon-stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7a7a7a;
+  margin-bottom: 12px;
+}
+
+.green-stat .mydon-stat-label {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.mydon-stat-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 30px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mydon-stat-value.white {
+  color: #ffffff;
+}
+
+.mydon-stat-sub {
+  font-size: 13px;
+  color: #9a9a9a;
+}
+
+.mydon-stat-sub.white-sub {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ============================================================
+   BAR CHART
+   ============================================================ */
+.mydon-chart-card {
+  background: #ffffff;
+  border: 1px solid #e5e2db;
+  border-radius: 14px;
+  padding: 28px;
+  margin-bottom: 32px;
+}
+
+.mydon-chart-card h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 24px;
+}
+
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  height: 200px;
+  padding-bottom: 28px;
+  position: relative;
+}
+
+.bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
+.bar-track {
+  flex: 1;
+  width: 100%;
+  max-width: 56px;
+  display: flex;
+  align-items: flex-end;
+  border-radius: 6px 6px 0 0;
+  overflow: hidden;
+}
+
+.bar-fill {
+  width: 100%;
+  background: #1e5631;
+  border-radius: 6px 6px 0 0;
+  min-height: 4px;
+  transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bar-label {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #9a9a9a;
+  font-weight: 500;
+}
+
+/* ============================================================
+   ALL DONATIONS LIST
+   ============================================================ */
+.mydon-list-section {
+  margin-top: 8px;
+}
+
+.mydon-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.mydon-list-header h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+/* Donation row */
+.mydon-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #ffffff;
+  border: 1px solid #e5e2db;
+  border-radius: 12px;
+  padding: 16px 22px;
+  margin-bottom: 10px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.mydon-row:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+}
+
+.mydon-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+  flex-shrink: 0;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.mydon-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mydon-info-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mydon-info-ngo {
+  font-size: 13px;
+  color: #7a7a7a;
+}
+
+.mydon-right {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.mydon-amount {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mydon-date-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.mydon-date {
+  font-size: 12px;
+  color: #9a9a9a;
+}
+
+.mydon-status {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.mydon-status.completed {
+  background: #e8f0ec;
+  color: #1e5631;
+}
+
+.mydon-status.recurring {
+  background: #fef3d6;
+  color: #b8922f;
+}
+
+.mydon-status.pending {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.mydon-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #9a9a9a;
+}
+
+.mydon-empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.3;
+}
+
+.mydon-empty p {
+  font-size: 14px;
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1024px) {
+  .mydon-stats { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .mydon-content { padding: 24px 20px; }
+  .bar-chart { gap: 12px; }
+}

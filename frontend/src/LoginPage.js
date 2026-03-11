@@ -68,20 +68,27 @@ function LoginPage() {
 
   return (
     <div className="login-wrapper">
-      {/* LEFT */}
+      
+      {/* LEFT SIDE */}
       <div className="left-section">
-  <img src={logo} alt="AidFlow Logo" className="logo" />
-  <h1>AidFlow</h1>
-  <p>Transparent. Secure. Impactful.</p>
-  <p>Connecting Donors & NGOs</p>
-</div>
+        <img src={logo} alt="AidFlow Logo" className="logo" />
+        <h1>AidFlow</h1>
+        <p>Transparent. Secure. Impactful.</p>
+        <p>Connecting Donors & NGOs Across Nepal</p>
+      </div>
 
-      {/* RIGHT */}
+      {/* RIGHT SIDE */}
       <div className="right-section">
         <div className="login-card">
+
+          {/* Back Button */}
+          <button className="back-btn" onClick={() => navigate("/")}>
+            ← Back to Home
+          </button>
+
           <h2>{mode === "login" ? "Welcome Back" : "Create Account"}</h2>
 
-          {/* ROLE SELECT (Only on Register) */}
+          {/* ROLE TOGGLE (Register only) */}
           {mode === "register" && (
             <div className="role-toggle">
               <button
@@ -99,7 +106,7 @@ function LoginPage() {
             </div>
           )}
 
-          {/* NGO Fields */}
+          {/* NGO FIELDS */}
           {mode === "register" && role === "ngo" && (
             <>
               <input
@@ -117,7 +124,7 @@ function LoginPage() {
             </>
           )}
 
-          {/* Donor Field */}
+          {/* DONOR FIELD */}
           {mode === "register" && role === "donor" && (
             <input
               type="text"
@@ -141,7 +148,6 @@ function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          {/* MAIN BUTTON */}
           <button
             className="primary-btn"
             onClick={mode === "login" ? handleLogin : handleRegister}
@@ -149,11 +155,10 @@ function LoginPage() {
             {mode === "login" ? "Login" : "Register"}
           </button>
 
-          {/* SMALL SWITCH BUTTON */}
           <div className="extra-links">
             {mode === "login" ? (
               <>
-                <span>Don’t have an account?</span>
+                <span>Don't have an account?</span>
                 <button
                   className="secondary-btn"
                   onClick={() => setMode("register")}
@@ -173,6 +178,7 @@ function LoginPage() {
               </>
             )}
           </div>
+
         </div>
       </div>
     </div>

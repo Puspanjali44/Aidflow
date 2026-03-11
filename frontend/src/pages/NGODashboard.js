@@ -30,8 +30,6 @@ function NGODashboard() {
     }
   };
 
-  // ================= REAL CALCULATED STATS =================
-
   const totalRaised = projects.reduce(
     (sum, project) => sum + (project.raisedAmount || 0),
     0
@@ -54,12 +52,11 @@ function NGODashboard() {
       <h1 className="page-title">NGO Dashboard</h1>
 
       {loading ? (
-        <p>Loading...</p>
+        <p style={{ color: '#7a7a7a', padding: '40px 0' }}>Loading...</p>
       ) : (
         <>
-          {/* ================= STAT CARDS ================= */}
+          {/* Stat Cards */}
           <div className="stats-grid">
-
             <div className="stat-card">
               <h4>Total Raised</h4>
               <p>Rs. {totalRaised.toLocaleString()}</p>
@@ -79,10 +76,9 @@ function NGODashboard() {
               <h4>Avg. Donation</h4>
               <p>Rs. {avgDonation.toLocaleString()}</p>
             </div>
-
           </div>
 
-          {/* ================= PROJECT FUNDING OVERVIEW ================= */}
+          {/* Project Funding Overview */}
           <div className="section">
             <h2>Project Funding Overview</h2>
 

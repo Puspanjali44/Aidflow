@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import NgoLayout from "../components/NgoLayout";
 import "./NGODashboard.css";
 
@@ -7,23 +8,22 @@ function NgoProjects() {
   const [loading, setLoading] = useState(true);
   const [editingProject, setEditingProject] = useState(null);
 
+  const navigate = useNavigate();
+
   useEffect(() => {
     fetchProjects();
   }, []);
 
-  // ================= FETCH PROJECTS =================
   const fetchProjects = async () => {
     try {
       const token = localStorage.getItem("token");
 
-      const res = await fetch(
-        "http://localhost:5000/api/projects/my",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await fetch("http://localhost:5000/api/projects/my", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       const data = await res.json();
+
       if (res.ok) setProjects(data);
     } catch (error) {
       console.error("Error fetching projects");
@@ -32,73 +32,56 @@ function NgoProjects() {
     }
   };
 
-  // ================= SUBMIT =================
   const handleSubmit = async (id) => {
     const token = localStorage.getItem("token");
 
-    const res = await fetch(
-      `http://localhost:5000/api/projects/${id}/submit`,
-      {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+    const res = await fetch(`http://localhost:5000/api/projects/${id}/submit`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
     if (res.ok) fetchProjects();
     else alert("Failed to submit project");
   };
 
-  // ================= PAUSE =================
   const handlePause = async (id) => {
     const token = localStorage.getItem("token");
 
-    const res = await fetch(
-      `http://localhost:5000/api/projects/${id}/pause`,
-      {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+    const res = await fetch(`http://localhost:5000/api/projects/${id}/pause`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
     if (res.ok) fetchProjects();
     else alert("Failed to pause project");
   };
 
-  // ================= RESUME =================
   const handleResume = async (id) => {
     const token = localStorage.getItem("token");
 
-    const res = await fetch(
-      `http://localhost:5000/api/projects/${id}/resume`,
-      {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+    const res = await fetch(`http://localhost:5000/api/projects/${id}/resume`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
     if (res.ok) fetchProjects();
     else alert("Failed to resume project");
   };
 
-  // ================= DELETE =================
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this draft project?")) return;
 
     const token = localStorage.getItem("token");
 
-    const res = await fetch(
-      `http://localhost:5000/api/projects/${id}`,
-      {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+    const res = await fetch(`http://localhost:5000/api/projects/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
     if (res.ok) fetchProjects();
     else alert("Only draft projects can be deleted");
   };
 
-  // ================= EDIT =================
   const handleEdit = (project) => {
     setEditingProject({ ...project });
   };
@@ -135,9 +118,9 @@ function NgoProjects() {
       <h1 className="page-title">Projects</h1>
 
       {loading ? (
-        <p>Loading...</p>
+        <div style={{ color: "#7a7a7a", padding: "40px 0" }}>Loading...</div>
       ) : projects.length === 0 ? (
-        <p>No projects created yet.</p>
+        <div className="empty-text">No projects created yet.</div>
       ) : (
         projects.map((project) => {
           const progress =
@@ -149,40 +132,35 @@ function NgoProjects() {
             <div key={project._id} className="project-card">
               <div className="project-header">
                 <h3>{project.title}</h3>
+
                 <span className={`status-badge ${project.status}`}>
-                  {project.status}
+                  {project.status.replace("_", " ")}
                 </span>
               </div>
 
-              {project.status === "under_review" && (
-                <p style={{ color: "orange" }}>
-                  Awaiting admin approval
-                </p>
-              )}
-
-              {project.status === "rejected" && (
-                <p style={{ color: "red" }}>
-                  Rejected by admin
-                </p>
-              )}
-
               <p>{project.description}</p>
 
-              <p>
-                Rs. {project.raisedAmount} raised of Rs.{" "}
-                {project.goalAmount}
+              <p style={{ fontSize: "13px", color: "#7a7a7a" }}>
+                Rs. {project.raisedAmount?.toLocaleString()} raised of Rs.{" "}
+                {project.goalAmount?.toLocaleString()}
               </p>
 
               <div className="progress-bar">
                 <div
                   className="progress-fill"
-                  style={{ width: `${progress}%` }}
+                  style={{ width: `${Math.min(progress, 100)}%` }}
                 />
               </div>
 
               <div className="project-actions">
+                {/* OPEN PROJECT PAGE */}
+                <button
+                  className="action-btn publish"
+                  onClick={() => navigate(`/projects/${project._id}`)}
+                >
+                  View Page
+                </button>
 
-                {/* DRAFT */}
                 {project.status === "draft" && (
                   <>
                     <button
@@ -201,7 +179,6 @@ function NgoProjects() {
                   </>
                 )}
 
-                {/* ACTIVE */}
                 {project.status === "active" && (
                   <>
                     <button
@@ -220,7 +197,6 @@ function NgoProjects() {
                   </>
                 )}
 
-                {/* PAUSED */}
                 {project.status === "paused" && (
                   <>
                     <button
@@ -238,14 +214,13 @@ function NgoProjects() {
                     </button>
                   </>
                 )}
-
               </div>
             </div>
           );
         })
       )}
 
-      {/* ================= EDIT MODAL ================= */}
+      {/* EDIT PROJECT MODAL */}
       {editingProject && (
         <div className="modal-overlay">
           <div className="modal">
@@ -284,9 +259,7 @@ function NgoProjects() {
             />
 
             <div className="modal-actions">
-              <button onClick={() => setEditingProject(null)}>
-                Cancel
-              </button>
+              <button onClick={() => setEditingProject(null)}>Cancel</button>
 
               <button
                 className="action-btn publish"

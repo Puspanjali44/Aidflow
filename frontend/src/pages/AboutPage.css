@@ -1,0 +1,403 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+/* ============================================================
+   ABOUT PAGE — matches DanaDisha About screenshots
+   ============================================================ */
+.about-container {
+  font-family: 'DM Sans', 'Segoe UI', sans-serif;
+  color: #1f2937;
+  background: #faf8f4;
+}
+
+/* ============================================================
+   NAVBAR — reuse from LandingPage
+   ============================================================ */
+.about-container .navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 64px;
+  height: 68px;
+  background: #ffffff;
+  border-bottom: 1px solid #eae7e0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.about-container .nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.about-container .brand-circle {
+  width: 36px;
+  height: 36px;
+  background: #1e5631;
+  border-radius: 10px;
+  position: relative;
+}
+
+.about-container .brand-circle::after {
+  content: '♥';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 16px;
+}
+
+.about-container .brand-circle.small {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+.about-container .brand-circle.small::after {
+  font-size: 13px;
+}
+
+.about-container .logo-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1e5631;
+}
+
+.about-container .nav-links {
+  display: flex;
+  gap: 4px;
+}
+
+.about-container .nav-links button {
+  background: none;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 8px 20px;
+  border-radius: 999px;
+  transition: all 0.2s;
+}
+
+.about-container .nav-links button:hover {
+  color: #1e5631;
+  background: #f0ede6;
+}
+
+.about-container .nav-links .active {
+  background: #1e5631;
+  color: white;
+}
+
+.about-container .nav-links .active:hover {
+  background: #174a28;
+  color: white;
+}
+
+.about-container .nav-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.about-container .login-btn {
+  padding: 9px 22px;
+  border-radius: 8px;
+  border: 1px solid #d4d0c8;
+  background: #ffffff;
+  color: #374151;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.about-container .login-btn:hover {
+  background: #f5f2eb;
+}
+
+.about-container .getstarted-btn {
+  padding: 9px 22px;
+  border-radius: 8px;
+  border: none;
+  background: #1e5631;
+  color: white;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.about-container .getstarted-btn:hover {
+  background: #174a28;
+}
+
+/* ============================================================
+   HERO — Deep green with left-aligned text
+   ============================================================ */
+.about-hero {
+  background: linear-gradient(135deg, #1e5631 0%, #2d6a4f 50%, #1e5631 100%);
+  color: white;
+  padding: 100px 64px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle grain overlay */
+.about-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.about-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.about-badge {
+  display: inline-block;
+  background: rgba(212, 168, 67, 0.2);
+  border: 1px solid rgba(212, 168, 67, 0.35);
+  color: #f4c96a;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 18px;
+  border-radius: 999px;
+  margin-bottom: 28px;
+}
+
+.about-hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.15;
+  margin-bottom: 20px;
+  letter-spacing: -0.5px;
+  max-width: 600px;
+}
+
+.about-hero p {
+  max-width: 640px;
+  font-size: 17px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* ============================================================
+   MISSION + PROBLEM — two-column cards
+   ============================================================ */
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  padding: 80px 64px;
+}
+
+.about-card {
+  background: #ffffff;
+  padding: 40px 36px;
+  border-radius: 16px;
+  border: 1px solid #e5e2db;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.about-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.06);
+}
+
+.about-card .card-icon {
+  width: 52px;
+  height: 52px;
+  background: #d4a843;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin-bottom: 22px;
+}
+
+.about-card h3 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 14px;
+}
+
+.about-card p {
+  font-size: 15px;
+  color: #6b7280;
+  line-height: 1.7;
+}
+
+/* ============================================================
+   VALUES — centered heading + 4 cards
+   ============================================================ */
+.values-section {
+  text-align: center;
+  padding: 80px 64px;
+  background: #faf8f4;
+}
+
+.values-section h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 10px;
+}
+
+.values-section > p {
+  font-size: 16px;
+  color: #6b7280;
+  margin-bottom: 48px;
+}
+
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.value-card {
+  background: #ffffff;
+  border: 1px solid #e5e2db;
+  border-radius: 16px;
+  padding: 32px 28px;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.value-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06);
+}
+
+.value-icon {
+  width: 48px;
+  height: 48px;
+  background: #1e5631;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: white;
+  margin: 0 auto 20px;
+}
+
+.value-card h4 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 10px;
+}
+
+.value-card p {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+/* ============================================================
+   TECH — clean tag pills
+   ============================================================ */
+.tech-section {
+  text-align: center;
+  padding: 80px 64px;
+  background: #ffffff;
+  border-top: 1px solid #eae7e0;
+}
+
+.tech-section h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 12px;
+}
+
+.tech-section > p {
+  font-size: 16px;
+  color: #6b7280;
+  max-width: 500px;
+  margin: 0 auto 36px;
+  line-height: 1.6;
+}
+
+.tech-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.tech-tags span {
+  background: #f0ede6;
+  border: 1px solid #e5e2db;
+  color: #374151;
+  padding: 9px 22px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+
+.tech-tags span:hover {
+  background: #1e5631;
+  color: white;
+  border-color: #1e5631;
+}
+
+/* ============================================================
+   FOOTER — dark green, matches landing page
+   ============================================================ */
+.about-container .footer {
+  background: #143528;
+  color: white;
+  padding: 32px 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.about-container .footer p {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1024px) {
+  .values-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .about-container .navbar { padding: 0 24px; }
+  .about-container .nav-links { display: none; }
+  .about-hero { padding: 64px 28px; }
+  .about-hero h1 { font-size: 32px; }
+  .about-grid { grid-template-columns: 1fr; padding: 48px 24px; }
+  .values-section { padding: 56px 24px; }
+  .values-grid { grid-template-columns: 1fr; }
+  .tech-section { padding: 56px 24px; }
+  .about-container .footer { padding: 24px; }
+}

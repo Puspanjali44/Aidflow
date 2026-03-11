@@ -1,121 +1,116 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
 /* ============================================================
-   NGO SIDEBAR
+   SHARED SIDEBAR — Light warm theme
    ============================================================ */
 .ngo-sidebar {
   width: 260px;
-  background: #0A1628;
-  color: white;
+  background: var(--bg-white);
+  color: var(--text-primary);
   display: flex;
   flex-direction: column;
-  padding: 28px 16px;
+  padding: 24px 16px;
   min-height: 100vh;
-  border-right: 1px solid rgba(45, 212, 191, 0.07);
-  font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+  border-right: 1px solid var(--border-light);
+  font-family: var(--font-body);
   position: sticky;
   top: 0;
   height: 100vh;
   flex-shrink: 0;
-
-  /* Custom scrollbar */
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(45, 212, 191, 0.2) transparent;
 }
 
-.ngo-sidebar::-webkit-scrollbar        { width: 3px; }
-.ngo-sidebar::-webkit-scrollbar-track  { background: transparent; }
-.ngo-sidebar::-webkit-scrollbar-thumb  {
-  background: rgba(45, 212, 191, 0.2);
-  border-radius: 99px;
-}
-.ngo-sidebar::-webkit-scrollbar-thumb:hover {
-  background: rgba(45, 212, 191, 0.4);
-}
-
-/* ============================================================
-   HEADER
-   ============================================================ */
+/* Logo */
+.sidebar-logo,
 .sidebar-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 36px;
-  padding: 0 4px;
+  gap: 10px;
+  margin-bottom: 32px;
+  padding: 4px 8px;
+}
+
+.sidebar-logo:not(:has(.logo-box)),
+.sidebar-header h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: -0.3px;
 }
 
 .logo-box {
-  width: 42px;
-  height: 42px;
-  background: linear-gradient(135deg, #2dd4bf, #14b8a6);
-  border-radius: 12px;
-  font-size: 20px;
+  width: 36px;
+  height: 36px;
+  background: var(--green);
+  border-radius: var(--radius-md);
+  font-size: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 0 20px rgba(45, 212, 191, 0.3);
-}
-
-.sidebar-header h2 {
-  margin: 0;
-  font-size: 19px;
-  font-weight: 800;
-  color: #2dd4bf;
-  letter-spacing: -0.4px;
-  line-height: 1.2;
+  color: white;
 }
 
 .portal-text {
-  font-size: 10.5px;
-  color: rgba(45, 212, 191, 0.4);
+  font-size: 11px;
+  color: var(--text-light);
   margin: 0;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  line-height: 1;
 }
 
-/* ============================================================
-   SECTION TITLE
-   ============================================================ */
+/* Section title */
 .section-title {
   font-size: 10px;
   font-weight: 700;
-  color: #1E3A4A;
-  letter-spacing: 0.14em;
+  color: var(--text-light);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  margin: 0 0 8px 4px;
+  margin: 16px 0 8px 8px;
 }
 
-/* ============================================================
-   NAV ITEMS
-   ============================================================ */
+.sidebar-section { display: flex; flex-direction: column; gap: 1px; }
+
+/* Nav links */
+.sidebar-nav,
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sidebar-nav a,
 .nav-item {
-  display: block;
-  padding: 10px 12px 10px 16px;
-  border-radius: 9px;
-  margin-bottom: 2px;
-  text-decoration: none;
-  color: #7BAABB;
-  font-size: 13.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
   font-weight: 500;
-  transition: all 0.18s;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all 0.15s;
   position: relative;
 }
 
+.sidebar-nav a:hover,
 .nav-item:hover {
-  color: #9ecfcf;
-  background: rgba(45, 212, 191, 0.06);
+  color: var(--green);
+  background: var(--bg-green-muted);
 }
 
-/* Active state — left bar accent */
+/* Active state */
+.sidebar-nav a.active-link,
+.sidebar-nav a.active,
 .nav-item.active {
-  background: rgba(45, 212, 191, 0.09);
-  color: #2dd4bf;
-  font-weight: 700;
+  color: var(--green);
+  font-weight: 600;
+  background: var(--bg-green-muted);
 }
 
+.sidebar-nav a.active-link::before,
+.sidebar-nav a.active::before,
 .nav-item.active::before {
   content: '';
   position: absolute;
@@ -124,78 +119,28 @@
   bottom: 20%;
   width: 3px;
   border-radius: 0 3px 3px 0;
-  background: #2dd4bf;
-  box-shadow: 0 0 8px rgba(45, 212, 191, 0.5);
+  background: var(--green);
 }
 
-/* ============================================================
-   PROFILE CARD
-   ============================================================ */
-.sidebar-profile {
-  margin-top: auto;
-  background: rgba(45, 212, 191, 0.05);
-  border: 1px solid rgba(45, 212, 191, 0.10);
-  padding: 14px 16px;
-  border-radius: 12px;
-  margin-bottom: 12px;
-  transition: border-color 0.18s;
-}
-
-.sidebar-profile:hover {
-  border-color: rgba(45, 212, 191, 0.18);
-}
-
-.sidebar-profile p {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 700;
-  color: #EEF4FF;
-  margin-bottom: 4px;
-}
-
-.sidebar-profile small {
-  font-size: 11.5px;
-  color: #2D4A5A;
-}
-
-/* Verified badge */
-.verified {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #2dd4bf;
-  background: rgba(45, 212, 191, 0.10);
-  border: 1px solid rgba(45, 212, 191, 0.20);
-  padding: 3px 9px;
-  border-radius: 20px;
-  margin-top: 6px;
-  display: inline-block;
-}
-
-/* ============================================================
-   LOGOUT BUTTON
-   ============================================================ */
+/* Logout */
 .logout-btn {
   width: 100%;
-  background: rgba(45, 212, 191, 0.07);
-  border: 1px solid rgba(45, 212, 191, 0.18);
-  padding: 11px;
-  border-radius: 10px;
-  color: #2dd4bf;
+  margin-top: auto;
+  background: var(--bg-white);
+  border: 1px solid var(--border-light);
+  padding: 10px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
   cursor: pointer;
-  font-family: inherit;
-  font-size: 13.5px;
-  font-weight: 700;
-  transition: all 0.18s;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.15s;
   text-align: center;
-  letter-spacing: 0.01em;
 }
 
 .logout-btn:hover {
-  background: rgba(45, 212, 191, 0.13);
-  border-color: rgba(45, 212, 191, 0.32);
-  transform: translateY(-1px);
-  opacity: 1;
+  background: var(--red-light);
+  color: var(--red);
+  border-color: rgba(220, 53, 69, 0.2);
 }

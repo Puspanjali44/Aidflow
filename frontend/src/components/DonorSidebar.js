@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import "../components/DonorSidebar.css"; // reuse same CSS
+import "./DonorSidebar.css";
 
 function DonorSidebar() {
   const navigate = useNavigate();
@@ -12,35 +12,34 @@ function DonorSidebar() {
     navigate("/");
   };
 
+  const navItems = [
+    { path: "/donor-dashboard", label: "Dashboard"},
+    { path: "/browse", label: "Browse NGOs" },
+    { path: "/my-donations", label: "My Donations" },
+    { path: "/badges", label: "Badges"},
+  ];
+
   return (
     <div className="ngo-sidebar">
       <h2 className="sidebar-logo">AidFlow</h2>
 
+      <p className="section-title">Navigation</p>
+
       <nav className="sidebar-nav">
-        <Link
-          to="/donor-dashboard"
-          className={location.pathname === "/donor-dashboard" ? "active-link" : ""}
-        >
-          Dashboard
-        </Link>
-
-        <Link
-          to="/browse"
-          className={location.pathname === "/browse" ? "active-link" : ""}
-        >
-          Browse NGOs
-        </Link>
-
-        <Link
-          to="/my-donations"
-          className={location.pathname === "/my-donations" ? "active-link" : ""}
-        >
-          My Donations
-        </Link>
+        {navItems.map(({ path, label, icon }) => (
+          <Link
+            key={path}
+            to={path}
+            className={location.pathname === path ? "active-link" : ""}
+          >
+            <span style={{ fontSize: 15, lineHeight: 1 }}>{icon}</span>
+            {label}
+          </Link>
+        ))}
       </nav>
 
       <button className="logout-btn" onClick={handleLogout}>
-        Logout
+        Sign Out
       </button>
     </div>
   );

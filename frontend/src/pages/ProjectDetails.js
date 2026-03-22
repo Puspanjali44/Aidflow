@@ -1,516 +1,696 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
+import NgoLayout from "../components/NgoLayout";
+import DonateModal from "./DonateModal";
 import "./ProjectDetails.css";
 
-function ProjectDetails() {
+const BASE = "http://localhost:5000";
+const API  = `${BASE}/api`;
 
-const { id } = useParams();
-
-const [project, setProject] = useState(null);
-const [updates, setUpdates] = useState([]);
-
-const [showForm, setShowForm] = useState(false);
-const [editingUpdate, setEditingUpdate] = useState(null);
-const [editingProject, setEditingProject] = useState(false);
-
-// FORCE NGO MODE FOR TEST
-const isNGO = true;
-
-const [form, setForm] = useState({
-title: "",
-description: "",
-expenseUsed: "",
-expenseCategory: "",
-photos: []
-});
-
-const [projectEdit, setProjectEdit] = useState({
-title: "",
-description: "",
-goalAmount: ""
-});
-
-
-
-/* ============================
-FETCH PROJECT
-============================ */
-
-const fetchProject = useCallback(async () => {
-
-try {
-
-const res = await fetch(`http://localhost:5000/api/projects/${id}`);
-const data = await res.json();
-
-setProject(data);
-
-setProjectEdit({
-title: data.title,
-description: data.description,
-goalAmount: data.goalAmount
-});
-
-} catch (error) {
-console.error(error);
-}
-
-}, [id]);
-
-
-
-/* ============================
-FETCH UPDATES
-============================ */
-
-const fetchUpdates = useCallback(async () => {
-
-try {
-
-const res = await fetch(`http://localhost:5000/api/updates/${id}`);
-const data = await res.json();
-
-setUpdates(data);
-
-} catch (error) {
-console.error(error);
-}
-
-}, [id]);
-
-
-
-useEffect(() => {
-
-fetchProject();
-fetchUpdates();
-
-}, [fetchProject, fetchUpdates]);
-
-
-
-/* ============================
-ADD / EDIT UPDATE
-============================ */
-
-const handleSubmit = async () => {
-
-try {
-
-const token = localStorage.getItem("token");
-
-const formData = new FormData();
-
-formData.append("projectId", id);
-formData.append("title", form.title);
-formData.append("description", form.description);
-formData.append("expenseUsed", form.expenseUsed);
-formData.append("expenseCategory", form.expenseCategory);
-
-for (let i = 0; i < form.photos.length; i++) {
-formData.append("photos", form.photos[i]);
-}
-
-const url = editingUpdate
-? `http://localhost:5000/api/updates/edit/${editingUpdate}`
-: "http://localhost:5000/api/updates/add";
-
-await fetch(url, {
-method: editingUpdate ? "PUT" : "POST",
-headers: {
-Authorization: `Bearer ${token}`
-},
-body: formData
-});
-
-setForm({
-title: "",
-description: "",
-expenseUsed: "",
-expenseCategory: "",
-photos: []
-});
-
-setShowForm(false);
-setEditingUpdate(null);
-
-fetchUpdates();
-
-} catch (error) {
-console.error(error);
-}
-
+const fmt      = (n)        => Number(n || 0).toLocaleString("en-IN");
+const getToken = ()         => localStorage.getItem("token");
+const getRole  = ()         => localStorage.getItem("role");
+const imgUrl   = (filename) => filename ? `${BASE}/uploads/${filename}` : null;
+const fmtDate  = (iso)      => {
+  if (!iso) return "";
+  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+};
+const scoreLabel = (s) => {
+  if (s >= 90) return "Excellent Transparency";
+  if (s >= 70) return "Good Transparency";
+  if (s >= 50) return "Fair Transparency";
+  return "Low Transparency";
 };
 
+export default function ProjectDetails() {
+  const { id }  = useParams();
+  const isNGO   = getRole() === "ngo";
+  const heroRef = useRef();
 
+  const [project,           setProject]           = useState(null);
+  const [updates,           setUpdates]           = useState([]);
+  const [timeline,          setTimeline]          = useState([]);
+  const [donors,            setDonors]            = useState([]);
+  const [impactReport,      setImpactReport]      = useState(null);
+  const [wordsSupport,      setWordsSupport]      = useState([]);
+  const [transparencyScore, setTransparencyScore] = useState(null);
 
-/* ============================
-DELETE UPDATE
-============================ */
+  const [activeTab,       setActiveTab]       = useState("updates");
+  const [imgModal,        setImgModal]        = useState(null);
+  const [toast,           setToast]           = useState(null);
+  const [showDonate,      setShowDonate]      = useState(false);   // ✅ donate modal
 
-const deleteUpdate = async (updateId) => {
+  const [editingProject, setEditingProject] = useState(false);
+  const [projectEdit,    setProjectEdit]    = useState({ title: "", description: "", goalAmount: "" });
+  const [heroPreview,    setHeroPreview]    = useState(null);
+  const [heroFile,       setHeroFile]       = useState(null);
 
-const token = localStorage.getItem("token");
+  const [showUpdateForm,  setShowUpdateForm]  = useState(false);
+  const [editingUpdateId, setEditingUpdateId] = useState(null);
+  const [updateForm,      setUpdateForm]      = useState({
+    title: "", description: "", expenseUsed: "", expenseCategory: "", photos: [],
+  });
 
-await fetch(`http://localhost:5000/api/updates/delete/${updateId}`, {
+  const showToast = (msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3200);
+  };
 
-method: "DELETE",
+  const fetchProject = useCallback(async () => {
+    try {
+      const r = await fetch(`${API}/projects/${id}`);
+      if (!r.ok) throw new Error();
+      const d = await r.json();
+      setProject(d);
+      setProjectEdit({ title: d.title, description: d.description, goalAmount: d.goalAmount });
+    } catch { }
+  }, [id]);
 
-headers: {
-Authorization: `Bearer ${token}`
+  const fetchUpdates = useCallback(async () => {
+    try {
+      const r = await fetch(`${API}/updates/${id}`);
+      if (!r.ok) return;
+      const d = await r.json();
+      setUpdates(Array.isArray(d) ? d : []);
+    } catch { setUpdates([]); }
+  }, [id]);
+
+  const fetchTimeline = useCallback(async () => {
+    try {
+      const r = await fetch(`${API}/projects/${id}/timeline`);
+      if (!r.ok) return;
+      setTimeline(await r.json());
+    } catch { setTimeline([]); }
+  }, [id]);
+
+  const fetchDonors = useCallback(async () => {
+    try {
+      const r = await fetch(`${API}/projects/${id}/donors`);
+      if (!r.ok) return;
+      setDonors(await r.json());
+    } catch { setDonors([]); }
+  }, [id]);
+
+  const fetchImpact = useCallback(async () => {
+    try {
+      const r = await fetch(`${API}/projects/${id}/impact`);
+      if (!r.ok) return;
+      setImpactReport(await r.json());
+    } catch { setImpactReport(null); }
+  }, [id]);
+
+  const fetchWords = useCallback(async () => {
+    try {
+      const r = await fetch(`${API}/projects/${id}/words-of-support`);
+      if (!r.ok) return;
+      setWordsSupport(await r.json());
+    } catch { setWordsSupport([]); }
+  }, [id]);
+
+  const fetchTransparency = useCallback(async () => {
+    try {
+      const r = await fetch(`${API}/projects/${id}/transparency`);
+      if (!r.ok) return;
+      setTransparencyScore(await r.json());
+    } catch { setTransparencyScore(null); }
+  }, [id]);
+
+  useEffect(() => {
+    fetchProject();
+    fetchUpdates();
+    fetchTimeline();
+    fetchDonors();
+    fetchImpact();
+    fetchWords();
+    fetchTransparency();
+  }, [fetchProject, fetchUpdates, fetchTimeline, fetchDonors, fetchImpact, fetchWords, fetchTransparency]);
+
+  const saveProjectEdit = async () => {
+    try {
+      const r = await fetch(`${API}/projects/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({
+          title: projectEdit.title,
+          description: projectEdit.description,
+          goalAmount: Number(projectEdit.goalAmount),
+        }),
+      });
+      if (!r.ok) throw new Error((await r.json()).message || "Failed");
+      setEditingProject(false);
+      fetchProject();
+      showToast("Project updated!");
+    } catch (e) {
+      showToast(e.message || "Error saving project", "error");
+    }
+  };
+
+  const handleHeroPick = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setHeroFile(file);
+    setHeroPreview(URL.createObjectURL(file));
+  };
+
+  const saveHeroOnly = async () => {
+    if (!heroFile) return;
+    try {
+      const fd = new FormData();
+      fd.append("image", heroFile);
+      const r = await fetch(`${API}/projects/${id}/image`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: fd,
+      });
+      if (!r.ok) throw new Error((await r.json()).message || "Failed");
+      setHeroFile(null);
+      setHeroPreview(null);
+      fetchProject();
+      showToast("Cover photo updated!");
+    } catch (e) {
+      showToast(e.message, "error");
+    }
+  };
+
+  const handleUpdateSubmit = async () => {
+    if (!updateForm.title.trim()) { showToast("Title is required", "error"); return; }
+    try {
+      const fd = new FormData();
+      fd.append("projectId",       id);
+      fd.append("title",           updateForm.title);
+      fd.append("description",     updateForm.description);
+      fd.append("expenseUsed",     updateForm.expenseUsed || 0);
+      fd.append("expenseCategory", updateForm.expenseCategory);
+      updateForm.photos.forEach(f => fd.append("photos", f));
+
+      const url    = editingUpdateId ? `${API}/updates/${editingUpdateId}` : `${API}/updates/add`;
+      const method = editingUpdateId ? "PUT" : "POST";
+
+      const r = await fetch(url, {
+        method,
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: fd,
+      });
+      if (!r.ok) throw new Error((await r.json()).message || "Failed");
+      resetUpdateForm();
+      fetchUpdates();
+      showToast(editingUpdateId ? "Update saved!" : "Update posted!");
+    } catch (e) {
+      showToast(e.message || "Error submitting", "error");
+    }
+  };
+
+  const deleteUpdate = async (uid) => {
+    if (!window.confirm("Delete this update? This cannot be undone.")) return;
+    try {
+      const r = await fetch(`${API}/updates/${uid}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (!r.ok) throw new Error((await r.json()).message || "Failed");
+      fetchUpdates();
+      showToast("Update deleted.");
+    } catch (e) {
+      showToast(e.message || "Error deleting", "error");
+    }
+  };
+
+  const startEditUpdate = (u) => {
+    setShowUpdateForm(true);
+    setEditingUpdateId(u._id);
+    setUpdateForm({
+      title: u.title,
+      description: u.description,
+      expenseUsed: u.expenseUsed || "",
+      expenseCategory: u.expenseCategory || "",
+      photos: [],
+    });
+    setTimeout(() => document.querySelector(".pd-update-form")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+  };
+
+  const resetUpdateForm = () => {
+    setShowUpdateForm(false);
+    setEditingUpdateId(null);
+    setUpdateForm({ title: "", description: "", expenseUsed: "", expenseCategory: "", photos: [] });
+  };
+
+  if (!project) return (
+    <div className="pd-loading">
+      <div className="pd-spinner" />
+      <span>Loading project…</span>
+    </div>
+  );
+
+  const progress = Math.min(100, ((project.raisedAmount || 0) / (project.goalAmount || 1)) * 100);
+  const ts = transparencyScore || { score: 92, regular_updates: 95, expense_reports: 90, completion_reports: 88, donor_feedback: 94 };
+
+  const heroSrc = heroPreview
+    || (project.image ? imgUrl(project.image) : null)
+    || "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=1200&q=80";
+
+  return (
+    <NgoLayout>
+      <div className="pd-root">
+
+        {toast && <div className={`pd-toast pd-toast-${toast.type}`}>{toast.msg}</div>}
+
+        {/* HERO */}
+        <div className="pd-hero-wrap">
+          <img className="pd-hero" src={heroSrc} alt={project.title} />
+          <div className="pd-hero-overlay" />
+          {isNGO && (
+            <>
+              <button className="pd-hero-change-btn" onClick={() => heroRef.current?.click()}>
+                <CameraIcon /> Change Cover Photo
+              </button>
+              <input ref={heroRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleHeroPick} />
+            </>
+          )}
+          {heroPreview && (
+            <div className="pd-hero-save-bar">
+              <span>New cover photo selected — save to apply</span>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button className="pd-hero-save-confirm" onClick={saveHeroOnly}>Save Photo</button>
+                <button className="pd-hero-save-cancel" onClick={() => { setHeroPreview(null); setHeroFile(null); }}>Discard</button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* BODY */}
+        <div className="pd-body">
+
+          {/* LEFT */}
+          <div className="pd-left">
+
+            <section className="pd-title-block">
+              {editingProject ? (
+                <div className="pd-edit-project-form">
+                  <label>Project Title</label>
+                  <input value={projectEdit.title} onChange={e => setProjectEdit({ ...projectEdit, title: e.target.value })} placeholder="Project title" />
+                  <label>Description</label>
+                  <textarea rows={4} value={projectEdit.description} onChange={e => setProjectEdit({ ...projectEdit, description: e.target.value })} placeholder="Describe the project…" />
+                  <label>Goal Amount (₹)</label>
+                  <input type="number" value={projectEdit.goalAmount} onChange={e => setProjectEdit({ ...projectEdit, goalAmount: e.target.value })} />
+                  <div className="pd-edit-actions">
+                    <button className="pd-btn-primary" onClick={saveProjectEdit}>💾 Save Changes</button>
+                    <button className="pd-btn-ghost" onClick={() => { setEditingProject(false); setHeroPreview(null); setHeroFile(null); }}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h1 className="pd-title">{project.title}</h1>
+                  <p className="pd-desc">{project.description}</p>
+                  {isNGO && (
+                    <button className="pd-btn-outline" onClick={() => setEditingProject(true)}>✏️ Edit Project</button>
+                  )}
+                </>
+              )}
+            </section>
+
+            {(project.adminVerified || project.docsApproved || project.bankVerified) && (
+              <div className="pd-verified">
+                <div className="pd-verified-top"><span>🛡️</span><strong className="pd-verified-text">✓ Verified Organization</strong></div>
+                <div className="pd-badges">
+                  {project.adminVerified && <span className="pd-badge">✅ Admin Verified</span>}
+                  {project.docsApproved  && <span className="pd-badge">✅ Documents Approved</span>}
+                  {project.bankVerified  && <span className="pd-badge">🏦 Bank Account Verified</span>}
+                </div>
+              </div>
+            )}
+
+            <section className="pd-fund-card">
+              <h2 className="pd-section-title">Real-Time Fund Tracking</h2>
+              <div className="pd-fund-numbers">
+                <span className="pd-raised">₹{fmt(project.raisedAmount)} raised</span>
+                <span className="pd-goal">₹{fmt(project.goalAmount)} goal</span>
+              </div>
+              <div className="pd-progress-track">
+                <div className="pd-progress-fill" style={{ width: `${progress}%` }} />
+              </div>
+              <p className="pd-progress-pct">{Math.round(progress)}% Complete</p>
+              <div className="pd-stats-row">
+                <StatChip icon="📈" label="Amount Raised" value={`₹${fmt(project.raisedAmount)}`} />
+                <StatChip icon="🎯" label="Goal"          value={`₹${fmt(project.goalAmount)}`} />
+                <StatChip icon="👥" label="Donors"        value={project.donorCount || 0} />
+                <StatChip icon="🕐" label="Last Donation" value={project.lastDonation || "—"} />
+              </div>
+            </section>
+
+            <section className="pd-approval-card">
+              <h2 className="pd-section-title">Admin Approval Status</h2>
+              <ApprovalStepper status={project.status || "draft"} message={project.statusMessage} />
+            </section>
+
+            <div className="pd-tabs">
+              {[
+                { key: "updates",  label: "Project Updates",  count: updates.length },
+                { key: "timeline", label: "Project Timeline" },
+                { key: "location", label: "Project Location" },
+                { key: "impact",   label: "Impact Report" },
+                { key: "words",    label: "Words of Support", count: wordsSupport.length },
+              ].map(t => (
+                <button key={t.key} className={`pd-tab ${activeTab === t.key ? "active" : ""}`} onClick={() => setActiveTab(t.key)}>
+                  {t.label}
+                  {t.count > 0 && <span className="pd-tab-badge">{t.count}</span>}
+                </button>
+              ))}
+            </div>
+
+            {activeTab === "updates" && (
+              <section className="pd-tab-panel">
+                {isNGO && !showUpdateForm && (
+                  <button className="pd-btn-primary pd-mb16" onClick={() => { resetUpdateForm(); setShowUpdateForm(true); }}>
+                    + Add Update
+                  </button>
+                )}
+                {showUpdateForm && (
+                  <div className="pd-update-form">
+                    <h3>{editingUpdateId ? "✏️ Edit Update" : "📝 New Update"}</h3>
+                    <label>Title *</label>
+                    <input placeholder="e.g. Foundation Completed" value={updateForm.title} onChange={e => setUpdateForm({ ...updateForm, title: e.target.value })} />
+                    <label>Description</label>
+                    <textarea rows={4} placeholder="What was accomplished…" value={updateForm.description} onChange={e => setUpdateForm({ ...updateForm, description: e.target.value })} />
+                    <div className="pd-form-row">
+                      <div>
+                        <label>Expense Used (₹)</label>
+                        <input type="number" placeholder="0" value={updateForm.expenseUsed} onChange={e => setUpdateForm({ ...updateForm, expenseUsed: e.target.value })} />
+                      </div>
+                      <div>
+                        <label>Category</label>
+                        <select value={updateForm.expenseCategory} onChange={e => setUpdateForm({ ...updateForm, expenseCategory: e.target.value })}>
+                          <option value="">Select Category</option>
+                          <option>Materials</option><option>Labor</option><option>Transport</option>
+                          <option>Equipment</option><option>Medical</option><option>Other</option>
+                        </select>
+                      </div>
+                    </div>
+                    <label>Photos (up to 5)</label>
+                    <input type="file" multiple accept="image/*" onChange={e => setUpdateForm({ ...updateForm, photos: Array.from(e.target.files) })} />
+                    {updateForm.photos.length > 0 && (
+                      <div className="pd-photo-preview-row">
+                        {updateForm.photos.map((f, i) => (
+                          <img key={i} src={URL.createObjectURL(f)} alt="" className="pd-photo-thumb" />
+                        ))}
+                      </div>
+                    )}
+                    <div className="pd-form-actions">
+                      <button className="pd-btn-primary" onClick={handleUpdateSubmit}>
+                        {editingUpdateId ? "💾 Save Changes" : "🚀 Submit Update"}
+                      </button>
+                      <button className="pd-btn-ghost" onClick={resetUpdateForm}>Cancel</button>
+                    </div>
+                  </div>
+                )}
+                <div className="pd-updates-list">
+                  {updates.length === 0 && <p className="pd-empty">No updates posted yet.</p>}
+                  {updates.map(u => (
+                    <UpdateCard key={u._id} update={u} isNGO={isNGO}
+                      onEdit={startEditUpdate}
+                      onDelete={deleteUpdate}
+                      onOpenPhoto={(photos, idx) => setImgModal({ photos, idx })}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {activeTab === "timeline" && (
+              <section className="pd-tab-panel">
+                <div className="pd-timeline">
+                  {timeline.length === 0
+                    ? <p className="pd-empty">No timeline events yet.</p>
+                    : timeline.map((t, i) => (
+                      <div className={`pd-tl-item ${t.done ? "done" : "pending"}`} key={i}>
+                        <div className="pd-tl-col">
+                          <div className="pd-tl-dot">{t.done ? <CheckIcon /> : <CircleIcon />}</div>
+                          {i < timeline.length - 1 && <div className={`pd-tl-line ${t.done ? "done" : ""}`} />}
+                        </div>
+                        <div className="pd-tl-content">
+                          <span className="pd-tl-label">{t.label}</span>
+                          <span className="pd-tl-date">{t.date}</span>
+                        </div>
+                      </div>
+                    ))
+                  }
+                </div>
+              </section>
+            )}
+
+            {activeTab === "location" && (
+              <section className="pd-tab-panel">
+                <div className="pd-map-wrap">
+                  <div className="pd-map-topbar">
+                    <button className="pd-btn-map-open" onClick={() => window.open(`https://maps.google.com/?q=${encodeURIComponent(project.location || "")}`, "_blank")}>
+                      🔗 Open in Maps
+                    </button>
+                  </div>
+                  {project.lat && project.lng
+                    ? <iframe title="map" className="pd-map-iframe"
+                        src={`https://maps.google.com/maps?q=${project.lat},${project.lng}&z=15&output=embed`}
+                        allowFullScreen />
+                    : <div className="pd-map-placeholder">📍 Location coordinates not set</div>
+                  }
+                  <div className="pd-map-footer">
+                    <span>📍 {project.location || "Location not provided"}</span>
+                    <button className="pd-btn-text" onClick={() => window.open(`https://maps.google.com/?q=${encodeURIComponent(project.location || "")}`, "_blank")}>
+                      Open in Maps ↗
+                    </button>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {activeTab === "impact" && (
+              <section className="pd-tab-panel">
+                {impactReport
+                  ? <div className="pd-impact-grid">
+                      <ImpactCard icon="📄" label="PDF Impact Report"     sub={impactReport.pdfUploaded ? "Uploaded" : "Not uploaded"} color={impactReport.pdfUploaded ? "green" : "gray"} />
+                      <ImpactCard icon="🖼️" label="Before/After Photos"   sub={impactReport.photoCount ? `${impactReport.photoCount} Photos` : "No photos"} color="blue" />
+                      <ImpactCard icon="👥" label="Beneficiaries Reached"  sub={impactReport.beneficiaries || "—"} color="purple" />
+                      <ImpactCard icon="💬" label="Testimonials Collected" sub={impactReport.testimonials ? `${impactReport.testimonials} Stories` : "—"} color="amber" />
+                    </div>
+                  : <p className="pd-empty">No impact report available yet.</p>
+                }
+              </section>
+            )}
+
+            {activeTab === "words" && (
+              <section className="pd-tab-panel">
+                <p className="pd-words-hint">Please donate to share words of support.</p>
+                {wordsSupport.length === 0
+                  ? <p className="pd-empty">No words of support yet.</p>
+                  : wordsSupport.map((w, i) => (
+                    <div className="pd-word-card" key={i}>
+                      <div className="pd-word-avatar">{w.name?.[0]?.toUpperCase() || "?"}</div>
+                      <div className="pd-word-body">
+                        <div className="pd-word-meta"><strong>{w.name}</strong><span>{w.amount} · {w.ago}</span></div>
+                        <p>{w.message}</p>
+                      </div>
+                    </div>
+                  ))
+                }
+              </section>
+            )}
+
+          </div>{/* /left */}
+
+          {/* SIDEBAR */}
+          <aside className="pd-sidebar">
+
+            {/* ✅ DONATE CARD — clicking opens the modal */}
+            <div className="pd-sidebar-card">
+              <button className="pd-btn-donate-big" onClick={() => setShowDonate(true)}>
+                <HeartIcon /> Donate Now
+              </button>
+              <button className="pd-btn-share-full" onClick={() => { navigator.clipboard.writeText(window.location.href); showToast("Link copied!"); }}>
+                <ShareIcon /> Share This Project
+              </button>
+            </div>
+
+            <div className="pd-sidebar-card">
+              <h3 className="pd-sidebar-title">Transparency Score</h3>
+              <div className="pd-ts-main">
+                <ScoreRing score={ts.score} />
+                <div>
+                  <strong className="pd-ts-label">{scoreLabel(ts.score)}</strong>
+                  <p className="pd-ts-sub">This project scores high on all transparency metrics</p>
+                </div>
+              </div>
+              <div className="pd-ts-bars">
+                <TsBar label="Regular Updates"    value={ts.regular_updates    || 0} />
+                <TsBar label="Expense Reports"    value={ts.expense_reports    || 0} />
+                <TsBar label="Completion Reports" value={ts.completion_reports || 0} />
+                <TsBar label="Donor Feedback"     value={ts.donor_feedback     || 0} />
+              </div>
+            </div>
+
+            <div className="pd-sidebar-card">
+              <div className="pd-donors-header">
+                <h3 className="pd-sidebar-title">Recent Donors</h3>
+                <span className="pd-donors-count">💜 {donors.length} donations</span>
+              </div>
+              {donors.length === 0
+                ? <p className="pd-empty">No donors yet.</p>
+                : donors.slice(0, 5).map((d, i) => (
+                  <div className="pd-donor-row" key={i}>
+                    <div className="pd-donor-avatar">{d.name?.[0]?.toUpperCase() || "?"}</div>
+                    <div>
+                      <p className="pd-donor-name">{d.name}</p>
+                      <p className="pd-donor-amt">{d.amount} · {d.ago}</p>
+                    </div>
+                  </div>
+                ))
+              }
+            </div>
+
+          </aside>
+
+        </div>{/* /body */}
+
+        {/* LIGHTBOX */}
+        {imgModal && (
+          <div className="pd-modal-backdrop" onClick={() => setImgModal(null)}>
+            <div className="pd-modal" onClick={e => e.stopPropagation()}>
+              <button className="pd-modal-close" onClick={() => setImgModal(null)}>✕</button>
+              <img className="pd-modal-img" src={imgUrl(imgModal.photos[imgModal.idx])} alt="" />
+              {imgModal.photos.length > 1 && (
+                <div className="pd-modal-nav">
+                  <button onClick={() => setImgModal(m => ({ ...m, idx: (m.idx - 1 + m.photos.length) % m.photos.length }))}>‹</button>
+                  <span>{imgModal.idx + 1} / {imgModal.photos.length}</span>
+                  <button onClick={() => setImgModal(m => ({ ...m, idx: (m.idx + 1) % m.photos.length }))}>›</button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ✅ DONATE MODAL — opens as a centred overlay when Donate Now clicked */}
+        {showDonate && project && (
+          <DonateModal
+            project={project}
+            onClose={() => {
+              setShowDonate(false);
+              fetchProject(); // refresh raised amount after donation
+              fetchDonors();  // refresh donor list
+            }}
+          />
+        )}
+
+      </div>{/* /pd-root */}
+    </NgoLayout>
+  );
 }
 
-});
-
-fetchUpdates();
-
-};
-
-
-
-/* ============================
-EDIT UPDATE
-============================ */
-
-const editUpdate = (u) => {
-
-setShowForm(true);
-
-setEditingUpdate(u._id);
-
-setForm({
-title: u.title,
-description: u.description,
-expenseUsed: u.expenseUsed,
-expenseCategory: u.expenseCategory,
-photos: []
-});
-
-};
-
-
-
-/* ============================
-EDIT PROJECT
-============================ */
-
-const saveProjectEdit = async () => {
-
-const token = localStorage.getItem("token");
-
-await fetch(`http://localhost:5000/api/projects/edit/${id}`, {
-
-method: "PUT",
-
-headers: {
-"Content-Type": "application/json",
-Authorization: `Bearer ${token}`
-},
-
-body: JSON.stringify(projectEdit)
-
-});
-
-setEditingProject(false);
-
-fetchProject();
-
-};
-
-
-
-if (!project) return <div style={{ padding: 40 }}>Loading...</div>;
-
-const progress =
-(project.raisedAmount / project.goalAmount) * 100 || 0;
-
-
-
-return (
-
-<div className="project-page">
-
-<img
-className="project-hero"
-src={
-project.image ||
-"https://images.unsplash.com/photo-1582719478250-c89cae4dc85b"
-}
-alt=""
-/>
-
-{/* PROJECT TITLE */}
-
-{editingProject ? (
-
-<div>
-
-<input
-value={projectEdit.title}
-onChange={(e)=>
-setProjectEdit({...projectEdit,title:e.target.value})
-}
-/>
-
-<textarea
-value={projectEdit.description}
-onChange={(e)=>
-setProjectEdit({...projectEdit,description:e.target.value})
-}
-/>
-
-<input
-type="number"
-value={projectEdit.goalAmount}
-onChange={(e)=>
-setProjectEdit({...projectEdit,goalAmount:e.target.value})
-}
-/>
-
-<button onClick={saveProjectEdit}>Save Project</button>
-
-</div>
-
-) : (
-
-<div>
-
-<h1 className="project-title">{project.title}</h1>
-
-<p>{project.description}</p>
-
-{isNGO && (
-<button
-className="add-update"
-onClick={()=>setEditingProject(true)}
->
-Edit Project
-</button>
-)}
-
-</div>
-
-)}
-
-
-
-<div className="project-grid">
-
-{/* LEFT SIDE */}
-
-<div>
-
-{/* PROGRESS */}
-
-<div className="progress-card">
-
-<h3>Real-Time Fund Tracking</h3>
-
-<p>
-
-₹{project.raisedAmount?.toLocaleString() || 0} raised of
-₹{project.goalAmount?.toLocaleString() || 0}
-
-</p>
-
-<div className="progress-bar">
-
-<div
-className="progress-fill"
-style={{ width: `${progress}%` }}
-/>
-
-</div>
-
-<p>{Math.round(progress)}% complete</p>
-
-</div>
-
-
-
-{/* =====================
-PROJECT UPDATES
-===================== */}
-
-<div className="update-section">
-
-<h2>Project Updates</h2>
-
-{isNGO && !showForm && (
-
-<button
-className="add-update"
-onClick={() => setShowForm(true)}
->
-Add Update
-</button>
-
-)}
-
-
-
-{/* UPDATE FORM */}
-
-{showForm && (
-
-<div className="update-form">
-
-<input
-placeholder="Update Title"
-value={form.title}
-onChange={(e)=>
-setForm({...form,title:e.target.value})
-}
-/>
-
-<textarea
-placeholder="Update Description"
-value={form.description}
-onChange={(e)=>
-setForm({...form,description:e.target.value})
-}
-/>
-
-<input
-type="number"
-placeholder="Expense Used"
-value={form.expenseUsed}
-onChange={(e)=>
-setForm({...form,expenseUsed:e.target.value})
-}
-/>
-
-<select
-value={form.expenseCategory}
-onChange={(e)=>
-setForm({...form,expenseCategory:e.target.value})
-}
->
-
-<option>Select Category</option>
-<option>Materials</option>
-<option>Labor</option>
-<option>Transport</option>
-<option>Equipment</option>
-
-</select>
-
-<input
-type="file"
-multiple
-onChange={(e)=>
-setForm({...form,photos:e.target.files})
-}
-/>
-
-<button
-className="add-update"
-onClick={handleSubmit}
->
-{editingUpdate ? "Update" : "Submit"}
-</button>
-
-</div>
-
-)}
-
-
-
-{/* UPDATE LIST */}
-
-{updates.map((u)=>(
-<div className="update-card" key={u._id}>
-
-<h3>{u.title}</h3>
-
-<p>{u.description}</p>
-
-{u.expenseUsed && (
-
-<p style={{color:"#2e7d32"}}>
-
-₹{u.expenseUsed} used for {u.expenseCategory}
-
-</p>
-
-)}
-
-<div className="update-images">
-
-{u.photos?.map((p)=>(
-<img
-key={p}
-src={`http://localhost:5000/uploads/${p}`}
-alt=""
-/>
-))}
-
-</div>
-
-{isNGO && (
-
-<div className="update-actions">
-
-<button onClick={()=>editUpdate(u)}>
-Edit
-</button>
-
-<button onClick={()=>deleteUpdate(u._id)}>
-Delete
-</button>
-
-</div>
-
-)}
-
-</div>
-))}
-
-</div>
-
-</div>
-
-
-
-{/* RIGHT SIDEBAR */}
-
-<div>
-
-<div className="sidebar-card">
-
-<h3>Support this project</h3>
-
-<button className="donate-btn">
-
-Donate Now
-
-</button>
-
-
-<div className="transparency">
-
-<p>Transparency Score</p>
-
-<div className="score-circle">
-92
-</div>
-
-<p style={{fontSize:12,color:"#666"}}>
-Based on updates & reporting
-</p>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-);
-
+/* ── UPDATE CARD ── */
+function UpdateCard({ update: u, isNGO, onEdit, onDelete, onOpenPhoto }) {
+  return (
+    <div className="pd-update-card">
+      <div className="pd-update-header">
+        <div>
+          <h3 className="pd-update-title">{u.title}</h3>
+          <span className="pd-update-meta">Organizer</span>
+        </div>
+        <span className="pd-update-date">📅 {fmtDate(u.createdAt)}</span>
+      </div>
+      <p className="pd-update-body">{u.description}</p>
+      {Number(u.expenseUsed) > 0 && (
+        <div className="pd-expense-tag">🔥 ₹{fmt(u.expenseUsed)} used for {u.expenseCategory}</div>
+      )}
+      {u.photos?.length > 0 && (
+        <div className="pd-photo-grid">
+          {u.photos.map((p, i) => (
+            <img key={p} alt={`photo-${i + 1}`} src={imgUrl(p)}
+              className="pd-photo-thumb clickable"
+              onClick={() => onOpenPhoto(u.photos, i)}
+              onError={e => { e.target.style.display = "none"; }}
+            />
+          ))}
+        </div>
+      )}
+      {isNGO && (
+        <div className="pd-update-actions">
+          <button className="pd-action-btn edit"   onClick={() => onEdit(u)}>✏️ Edit</button>
+          <button className="pd-action-btn delete" onClick={() => onDelete(u._id)}>🗑️ Delete</button>
+        </div>
+      )}
+    </div>
+  );
 }
 
-export default ProjectDetails;
+function ApprovalStepper({ status, message }) {
+  const steps  = ["draft", "under_review", "approved", "rejected"];
+  const labels = { draft: "Draft", under_review: "Under Review", approved: "Approved", rejected: "Rejected" };
+  const curr   = steps.indexOf(status);
+  return (
+    <div className="pd-approval">
+      <div className="pd-approval-steps">
+        {steps.map((s, i) => {
+          const isApproved = s === "approved" && status === "approved";
+          const isRejected = s === "rejected" && status === "rejected";
+          return (
+            <React.Fragment key={s}>
+              <div className={["pd-approval-step", i <= curr ? "active" : "", isApproved ? "approved" : "", isRejected ? "rejected" : ""].join(" ")}>
+                {isApproved ? <CheckIcon /> : isRejected ? "✕" : labels[s]}
+              </div>
+              {i < steps.length - 1 && <div className={`pd-approval-line ${i < curr ? "active" : ""}`} />}
+            </React.Fragment>
+          );
+        })}
+      </div>
+      {message && <p className="pd-approval-msg">{status === "approved" ? "✅" : "ℹ️"} {message}</p>}
+    </div>
+  );
+}
+
+function StatChip({ icon, label, value }) {
+  return (
+    <div className="pd-stat-chip">
+      <span className="pd-stat-icon">{icon}</span>
+      <span className="pd-stat-label">{label}</span>
+      <strong className="pd-stat-value">{value}</strong>
+    </div>
+  );
+}
+
+function ScoreRing({ score }) {
+  const r = 36, circ = 2 * Math.PI * r;
+  const offset = circ - (score / 100) * circ;
+  return (
+    <div className="pd-score-ring">
+      <svg width="96" height="96" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r={r} fill="none" stroke="#e8f5e9" strokeWidth="8" />
+        <circle cx="50" cy="50" r={r} fill="none" stroke="#2e7d32" strokeWidth="8"
+          strokeDasharray={circ} strokeDashoffset={offset}
+          strokeLinecap="round" transform="rotate(-90 50 50)" />
+      </svg>
+      <span className="pd-score-num">{score}%</span>
+    </div>
+  );
+}
+
+function TsBar({ label, value }) {
+  return (
+    <div className="pd-ts-bar-row">
+      <span className="pd-ts-bar-label">{label}</span>
+      <span className="pd-ts-bar-pct">{value}%</span>
+      <div className="pd-ts-track"><div className="pd-ts-fill" style={{ width: `${value}%` }} /></div>
+    </div>
+  );
+}
+
+function ImpactCard({ icon, label, sub, color }) {
+  return (
+    <div className="pd-impact-card">
+      <span className="pd-impact-icon">{icon}</span>
+      <span className="pd-impact-label">{label}</span>
+      <span className={`pd-impact-sub color-${color}`}>{sub}</span>
+    </div>
+  );
+}
+
+const ShareIcon  = () => <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>;
+const HeartIcon  = () => <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>;
+const CheckIcon  = () => <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>;
+const CircleIcon = () => <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>;
+const CameraIcon = () => <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>;

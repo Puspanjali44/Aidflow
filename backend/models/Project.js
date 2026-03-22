@@ -22,6 +22,12 @@ const projectSchema = new mongoose.Schema(
       default: 0
     },
 
+    // ✅ Cover photo filename (served from /uploads/)
+    image: {
+      type: String,
+      default: null
+    },
+
     endDate: {
       type: Date,
       required: true
@@ -49,6 +55,12 @@ const projectSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "NGO",
       required: true
+    },
+
+    // ✅ Track total spending from updates
+    totalSpent: {
+      type: Number,
+
     }
   },
   { timestamps: true }

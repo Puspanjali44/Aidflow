@@ -172,13 +172,6 @@ export default function ProjectDetailsPublic() {
   const realDonorCount =
     donors.length > 0 ? donors.length : Number(project.donorCount || 0);
 
-  const lastDonationValue =
-    donors.length > 0
-      ? donors[0]?.ago || fmtDate(donors[0]?.createdAt)
-      : project.lastDonation
-      ? fmtDate(project.lastDonation)
-      : "—";
-
   const progress =
     goalAmount > 0 ? clamp((realRaisedAmount / goalAmount) * 100, 0, 100) : 0;
 

@@ -19,12 +19,16 @@ const ngoRoutes = require("./routes/ngoRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const donationRoutes = require("./routes/donationRoutes");
 const updateRoutes = require("./routes/updateRoutes");
+const analyticsRoutes = require('./routes/analyticsRoutes');
+const adminRoutes = require('./routes/admin');
 
 app.use("/api/auth", authRoutes);
 app.use("/api/ngo", ngoRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/donations", donationRoutes);
 app.use("/api/updates", updateRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/admin', adminRoutes);
 
 // ======================
 // Static Uploads Folder

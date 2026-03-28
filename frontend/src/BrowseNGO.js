@@ -17,6 +17,7 @@ function BrowseNGO() {
     try {
       const res = await axios.get("http://localhost:5000/api/projects/public");
       setProjects(Array.isArray(res.data) ? res.data : []);
+      console.log("PUBLIC PROJECTS:", res.data);
     } catch (error) {
       console.error("Error fetching projects:", error);
       setProjects([]);
@@ -25,25 +26,14 @@ function BrowseNGO() {
 
   const getNgoName = (project) =>
     project?.ngo?.organizationName ||
+    project?.ngo?.name ||
     project?.ngoName ||
-    project?.organizationName ||
     "Organization";
 
   const getNgoCategory = (project) =>
     project?.ngo?.category ||
     project?.ngoCategory ||
-    project?.category ||
     "Non-Profit";
-
-  const getRaisedAmount = (project) => {
-    const raised = Number(project?.raisedAmount || 0);
-    const goal = Number(project?.goalAmount || 0);
-
-    if (goal <= 0) return raised;
-    return Math.min(raised, goal);
-  };
-
-  const getDonorCount = (project) => Number(project?.donorCount || 0);
 
   const getInitial = (name) => (name ? name.charAt(0).toUpperCase() : "?");
 
@@ -57,16 +47,10 @@ function BrowseNGO() {
     const q = search.toLowerCase().trim();
     if (!q) return true;
 
-    const ngoName = getNgoName(p).toLowerCase();
-    const ngoCategory = getNgoCategory(p).toLowerCase();
-    const projectTitle = (p.title || "").toLowerCase();
-    const projectDesc = (p.description || "").toLowerCase();
-
     return (
-      projectTitle.includes(q) ||
-      projectDesc.includes(q) ||
-      ngoName.includes(q) ||
-      ngoCategory.includes(q)
+      (p.title || "").toLowerCase().includes(q) ||
+      getNgoName(p).toLowerCase().includes(q) ||
+      getNgoCategory(p).toLowerCase().includes(q)
     );
   });
 
@@ -100,16 +84,14 @@ function BrowseNGO() {
             filtered.map((project, index) => {
               const ngoName = getNgoName(project);
               const ngoCategory = getNgoCategory(project);
-              const raisedAmount = getRaisedAmount(project);
+
+              const raisedAmount = Number(project?.raisedAmount || 0);
               const goalAmount = Number(project?.goalAmount || 0);
-              const donorCount = getDonorCount(project);
+              const donorCount = Number(project?.donorCount || 0);
 
               const progress =
                 goalAmount > 0
-                  ? Math.min(
-                      Math.round((raisedAmount / goalAmount) * 100),
-                      100
-                    )
+                  ? Math.min(Math.round((raisedAmount / goalAmount) * 100), 100)
                   : 0;
 
               return (
@@ -136,16 +118,16 @@ function BrowseNGO() {
                       <span className="verified-badge">✓ Verified</span>
                     </div>
 
+                    {/* THIS IS THE NGO NAME */}
                     <h3 className="ngo-name">{ngoName}</h3>
 
+                    {/* THIS IS THE PROJECT TITLE */}
                     <p className="ngo-desc">{project.title || "Untitled Project"}</p>
 
                     {goalAmount > 0 && (
                       <div className="ngo-progress-section">
                         <div className="ngo-progress-row">
-                          <span>
-                            NPR {raisedAmount.toLocaleString("en-IN")} raised
-                          </span>
+                          <span>NPR {raisedAmount.toLocaleString("en-IN")} raised</span>
                           <span>{progress}%</span>
                         </div>
 

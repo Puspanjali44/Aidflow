@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import "./DonateModal.css";
 
 const BASE = "http://localhost:5000";
@@ -38,11 +38,6 @@ export default function DonateModal({ project, onClose }) {
   const goalAmount = Number(project?.goalAmount || 0);
   const raisedAmount = Number(project?.raisedAmount || 0);
   const remainingAmount = Math.max(goalAmount - raisedAmount, 0);
-
-  const validPresetAmounts = useMemo(
-    () => PRESET_AMOUNTS.filter((amt) => amt <= remainingAmount),
-    [remainingAmount]
-  );
 
   const enteredAmount = customAmt !== "" ? Number(customAmt) : Number(selectedAmt || 0);
 

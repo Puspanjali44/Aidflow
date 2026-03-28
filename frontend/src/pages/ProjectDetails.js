@@ -76,6 +76,26 @@ export default function ProjectDetails() {
     photos: [],
   });
 
+  const [showTimelineForm, setShowTimelineForm] = useState(false);
+  const [timelineForm, setTimelineForm] = useState({
+    label: "",
+    date: "",
+    done: false,
+  });
+
+  const [locationForm, setLocationForm] = useState({
+    location: "",
+    lat: "",
+    lng: "",
+  });
+
+  const [impactForm, setImpactForm] = useState({
+    beneficiaries: "",
+    testimonials: "",
+    pdf: null,
+    photos: [],
+  });
+
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3200);
@@ -86,11 +106,17 @@ export default function ProjectDetails() {
       const r = await fetch(`${API}/projects/${id}`);
       if (!r.ok) throw new Error();
       const d = await r.json();
+
       setProject(d);
       setProjectEdit({
         title: d.title,
         description: d.description,
         goalAmount: d.goalAmount,
+      });
+      setLocationForm({
+        location: d.location || "",
+        lat: d.lat || "",
+        lng: d.lng || "",
       });
     } catch {
       setProject(null);
@@ -112,7 +138,8 @@ export default function ProjectDetails() {
     try {
       const r = await fetch(`${API}/projects/${id}/timeline`);
       if (!r.ok) return;
-      setTimeline(await r.json());
+      const d = await r.json();
+      setTimeline(Array.isArray(d) ? d : []);
     } catch {
       setTimeline([]);
     }
@@ -207,7 +234,7 @@ export default function ProjectDetails() {
   };
 
   const handleHeroPick = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
     setHeroFile(file);
     setHeroPreview(URL.createObjectURL(file));
@@ -233,7 +260,7 @@ export default function ProjectDetails() {
       fetchProject();
       showToast("Cover photo updated!");
     } catch (e) {
-      showToast(e.message, "error");
+      showToast(e.message || "Error updating cover photo", "error");
     }
   };
 
@@ -268,9 +295,102 @@ export default function ProjectDetails() {
       resetUpdateForm();
       fetchUpdates();
       fetchTransparency();
+      fetchImpact();
       showToast(editingUpdateId ? "Update saved!" : "Update posted!");
     } catch (e) {
       showToast(e.message || "Error submitting", "error");
+    }
+  };
+
+  const handleTimelineSubmit = async () => {
+    if (!timelineForm.label.trim()) {
+      showToast("Timeline label is required", "error");
+      return;
+    }
+
+    try {
+      const r = await fetch(`${API}/projects/${id}/timeline`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({
+          label: timelineForm.label,
+          date: timelineForm.date,
+          done: timelineForm.done,
+        }),
+      });
+
+      if (!r.ok) throw new Error((await r.json()).message || "Failed");
+
+      setTimelineForm({ label: "", date: "", done: false });
+      setShowTimelineForm(false);
+      fetchTimeline();
+      showToast("Timeline item added!");
+    } catch (e) {
+      showToast(e.message || "Error saving timeline", "error");
+    }
+  };
+
+  const handleLocationSave = async () => {
+    try {
+      const r = await fetch(`${API}/projects/${id}/location`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({
+          location: locationForm.location,
+          lat: locationForm.lat !== "" ? Number(locationForm.lat) : null,
+          lng: locationForm.lng !== "" ? Number(locationForm.lng) : null,
+        }),
+      });
+
+      if (!r.ok) throw new Error((await r.json()).message || "Failed");
+
+      fetchProject();
+      showToast("Project location updated!");
+    } catch (e) {
+      showToast(e.message || "Error saving location", "error");
+    }
+  };
+
+  const handleImpactSubmit = async () => {
+    try {
+      const fd = new FormData();
+      fd.append("beneficiaries", impactForm.beneficiaries || "");
+      fd.append("testimonials", impactForm.testimonials || "");
+
+      if (impactForm.pdf) {
+        fd.append("pdf", impactForm.pdf);
+      }
+
+      impactForm.photos.forEach((file) => fd.append("photos", file));
+
+      const r = await fetch(`${API}/projects/${id}/impact`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: fd,
+      });
+
+      if (!r.ok) throw new Error((await r.json()).message || "Failed");
+
+      setImpactForm({
+        beneficiaries: "",
+        testimonials: "",
+        pdf: null,
+        photos: [],
+      });
+
+      fetchImpact();
+      fetchTransparency();
+      showToast("Impact report uploaded!");
+    } catch (e) {
+      showToast(e.message || "Error uploading impact report", "error");
     }
   };
 
@@ -338,22 +458,13 @@ export default function ProjectDetails() {
     0
   );
   const projectRaisedAmount = Number(project.raisedAmount || 0);
-
   const rawRaisedAmount =
     donorRaisedAmount > 0 ? donorRaisedAmount : projectRaisedAmount;
 
   const realRaisedAmount = clamp(rawRaisedAmount, 0, goalAmount);
   const remainingToGoal = Math.max(goalAmount - realRaisedAmount, 0);
-
   const realDonorCount =
     donors.length > 0 ? donors.length : Number(project.donorCount || 0);
-
-  const lastDonationValue =
-    donors.length > 0
-      ? donors[0]?.ago || fmtDate(donors[0]?.createdAt)
-      : project.lastDonation
-      ? fmtDate(project.lastDonation)
-      : "—";
 
   const progress =
     goalAmount > 0 ? clamp((realRaisedAmount / goalAmount) * 100, 0, 100) : 0;
@@ -589,9 +700,7 @@ export default function ProjectDetails() {
               <h2 className="pd-section-title">Real-Time Fund Tracking</h2>
 
               <div className="pd-fund-numbers">
-                <span className="pd-raised">
-                  ₹{fmt(realRaisedAmount)} raised
-                </span>
+                <span className="pd-raised">₹{fmt(realRaisedAmount)} raised</span>
                 <span className="pd-goal">₹{fmt(goalAmount)} goal</span>
               </div>
 
@@ -654,9 +763,7 @@ export default function ProjectDetails() {
                   onClick={() => setActiveTab(t.key)}
                 >
                   {t.label}
-                  {t.count > 0 && (
-                    <span className="pd-tab-badge">{t.count}</span>
-                  )}
+                  {t.count > 0 && <span className="pd-tab-badge">{t.count}</span>}
                 </button>
               ))}
             </div>
@@ -747,7 +854,7 @@ export default function ProjectDetails() {
                       onChange={(e) =>
                         setUpdateForm({
                           ...updateForm,
-                          photos: Array.from(e.target.files),
+                          photos: Array.from(e.target.files || []),
                         })
                       }
                     />
@@ -770,9 +877,7 @@ export default function ProjectDetails() {
                         className="pd-btn-primary"
                         onClick={handleUpdateSubmit}
                       >
-                        {editingUpdateId
-                          ? "💾 Save Changes"
-                          : "🚀 Submit Update"}
+                        {editingUpdateId ? "💾 Save Changes" : "🚀 Submit Update"}
                       </button>
                       <button className="pd-btn-ghost" onClick={resetUpdateForm}>
                         Cancel
@@ -792,9 +897,7 @@ export default function ProjectDetails() {
                       isNGO={isNGO}
                       onEdit={startEditUpdate}
                       onDelete={deleteUpdate}
-                      onOpenPhoto={(photos, idx) =>
-                        setImgModal({ photos, idx })
-                      }
+                      onOpenPhoto={(photos, idx) => setImgModal({ photos, idx })}
                     />
                   ))}
                 </div>
@@ -803,6 +906,71 @@ export default function ProjectDetails() {
 
             {activeTab === "timeline" && (
               <section className="pd-tab-panel">
+                {isNGO && !showTimelineForm && (
+                  <button
+                    className="pd-btn-primary pd-mb16"
+                    onClick={() => setShowTimelineForm(true)}
+                  >
+                    + Add Timeline
+                  </button>
+                )}
+
+                {isNGO && showTimelineForm && (
+                  <div className="pd-update-form">
+                    <h3>🗓️ New Timeline Item</h3>
+
+                    <label>Label *</label>
+                    <input
+                      placeholder="e.g. Materials Purchased"
+                      value={timelineForm.label}
+                      onChange={(e) =>
+                        setTimelineForm({ ...timelineForm, label: e.target.value })
+                      }
+                    />
+
+                    <label>Date</label>
+                    <input
+                      type="date"
+                      value={timelineForm.date}
+                      onChange={(e) =>
+                        setTimelineForm({ ...timelineForm, date: e.target.value })
+                      }
+                    />
+
+                    <label className="pd-checkbox-row">
+                      <input
+                        type="checkbox"
+                        checked={timelineForm.done}
+                        onChange={(e) =>
+                          setTimelineForm({
+                            ...timelineForm,
+                            done: e.target.checked,
+                          })
+                        }
+                      />
+                      <span>Mark as completed</span>
+                    </label>
+
+                    <div className="pd-form-actions">
+                      <button
+                        className="pd-btn-primary"
+                        onClick={handleTimelineSubmit}
+                      >
+                        Save Timeline
+                      </button>
+                      <button
+                        className="pd-btn-ghost"
+                        onClick={() => {
+                          setShowTimelineForm(false);
+                          setTimelineForm({ label: "", date: "", done: false });
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="pd-timeline">
                   {timeline.length === 0 ? (
                     <p className="pd-empty">No timeline events yet.</p>
@@ -817,9 +985,7 @@ export default function ProjectDetails() {
                             {t.done ? <CheckIcon /> : <CircleIcon />}
                           </div>
                           {i < timeline.length - 1 && (
-                            <div
-                              className={`pd-tl-line ${t.done ? "done" : ""}`}
-                            />
+                            <div className={`pd-tl-line ${t.done ? "done" : ""}`} />
                           )}
                         </div>
                         <div className="pd-tl-content">
@@ -835,6 +1001,58 @@ export default function ProjectDetails() {
 
             {activeTab === "location" && (
               <section className="pd-tab-panel">
+                {isNGO && (
+                  <div className="pd-update-form pd-mb16">
+                    <h3>📍 Project Location</h3>
+
+                    <label>Location Name / Address</label>
+                    <input
+                      placeholder="e.g. Kathmandu, Nepal"
+                      value={locationForm.location}
+                      onChange={(e) =>
+                        setLocationForm({
+                          ...locationForm,
+                          location: e.target.value,
+                        })
+                      }
+                    />
+
+                    <div className="pd-form-row">
+                      <div>
+                        <label>Latitude</label>
+                        <input
+                          type="number"
+                          step="any"
+                          placeholder="e.g. 27.7172"
+                          value={locationForm.lat}
+                          onChange={(e) =>
+                            setLocationForm({ ...locationForm, lat: e.target.value })
+                          }
+                        />
+                      </div>
+
+                      <div>
+                        <label>Longitude</label>
+                        <input
+                          type="number"
+                          step="any"
+                          placeholder="e.g. 85.3240"
+                          value={locationForm.lng}
+                          onChange={(e) =>
+                            setLocationForm({ ...locationForm, lng: e.target.value })
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pd-form-actions">
+                      <button className="pd-btn-primary" onClick={handleLocationSave}>
+                        Save Location
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="pd-map-wrap">
                   <div className="pd-map-topbar">
                     <button
@@ -887,6 +1105,88 @@ export default function ProjectDetails() {
 
             {activeTab === "impact" && (
               <section className="pd-tab-panel">
+                {isNGO && (
+                  <div className="pd-update-form pd-mb16">
+                    <h3>📊 Upload Impact Report</h3>
+
+                    <div className="pd-form-row">
+                      <div>
+                        <label>Beneficiaries Reached</label>
+                        <input
+                          type="number"
+                          placeholder="e.g. 120"
+                          value={impactForm.beneficiaries}
+                          onChange={(e) =>
+                            setImpactForm({
+                              ...impactForm,
+                              beneficiaries: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+
+                      <div>
+                        <label>Testimonials Count</label>
+                        <input
+                          type="number"
+                          placeholder="e.g. 8"
+                          value={impactForm.testimonials}
+                          onChange={(e) =>
+                            setImpactForm({
+                              ...impactForm,
+                              testimonials: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <label>Impact Report PDF</label>
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) =>
+                        setImpactForm({
+                          ...impactForm,
+                          pdf: e.target.files?.[0] || null,
+                        })
+                      }
+                    />
+
+                    <label>Before / After Photos</label>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={(e) =>
+                        setImpactForm({
+                          ...impactForm,
+                          photos: Array.from(e.target.files || []),
+                        })
+                      }
+                    />
+
+                    {impactForm.photos.length > 0 && (
+                      <div className="pd-photo-preview-row">
+                        {impactForm.photos.map((f, i) => (
+                          <img
+                            key={i}
+                            src={URL.createObjectURL(f)}
+                            alt=""
+                            className="pd-photo-thumb"
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="pd-form-actions">
+                      <button className="pd-btn-primary" onClick={handleImpactSubmit}>
+                        Upload Impact Report
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {impactReport ? (
                   <div className="pd-impact-grid">
                     <ImpactCard
@@ -945,9 +1245,7 @@ export default function ProjectDetails() {
                       <div className="pd-word-body">
                         <div className="pd-word-meta">
                           <strong>{w.name}</strong>
-                          <span>
-                            {w.amount} · {w.ago}
-                          </span>
+                          <span>{w.amount} · {w.ago}</span>
                         </div>
                         <p>{w.message}</p>
                       </div>
@@ -1053,9 +1351,7 @@ export default function ProjectDetails() {
                     </div>
                     <div>
                       <p className="pd-donor-name">{d.name}</p>
-                      <p className="pd-donor-amt">
-                        {d.amount} · {d.ago}
-                      </p>
+                      <p className="pd-donor-amt">{d.amount} · {d.ago}</p>
                     </div>
                   </div>
                 ))
@@ -1065,10 +1361,7 @@ export default function ProjectDetails() {
         </div>
 
         {imgModal && (
-          <div
-            className="pd-modal-backdrop"
-            onClick={() => setImgModal(null)}
-          >
+          <div className="pd-modal-backdrop" onClick={() => setImgModal(null)}>
             <div className="pd-modal" onClick={(e) => e.stopPropagation()}>
               <button
                 className="pd-modal-close"

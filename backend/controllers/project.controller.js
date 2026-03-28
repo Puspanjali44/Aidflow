@@ -22,7 +22,12 @@ exports.createProject = async (req, res) => {
       ngo: ngoProfile._id,
     });
 
-    res.status(201).json(project);
+    const populatedProject = await Project.findById(project._id).populate(
+      "ngo",
+      "organizationName category verified verificationStatus"
+    );
+
+    res.status(201).json(populatedProject);
   } catch (error) {
     console.error("CREATE PROJECT ERROR:", error);
     res.status(500).json({ message: "Server error" });
@@ -44,11 +49,11 @@ exports.getMyProjects = async (req, res) => {
 
     const now = new Date();
 
-    for (let project of projects) {
+    for (const project of projects) {
       if (
         project.status !== "completed" &&
         project.status !== "rejected" &&
-        project.raisedAmount >= project.goalAmount
+        Number(project.raisedAmount || 0) >= Number(project.goalAmount || 0)
       ) {
         project.status = "completed";
         await project.save();
@@ -62,7 +67,11 @@ exports.getMyProjects = async (req, res) => {
       }
     }
 
-    res.json(projects);
+    const refreshedProjects = await Project.find({ ngo: ngoProfile._id })
+      .populate("ngo", "organizationName category verified verificationStatus")
+      .sort({ createdAt: -1 });
+
+    res.json(refreshedProjects);
   } catch (error) {
     console.error("GET MY PROJECTS ERROR:", error);
     res.status(500).json({ message: "Server error" });
@@ -103,9 +112,14 @@ exports.submitForReview = async (req, res) => {
     project.status = "under_review";
     await project.save();
 
+    const populatedProject = await Project.findById(project._id).populate(
+      "ngo",
+      "organizationName category verified verificationStatus"
+    );
+
     res.json({
       message: "Project submitted for admin review",
-      project,
+      project: populatedProject,
     });
   } catch (error) {
     console.error("SUBMIT FOR REVIEW ERROR:", error);
@@ -144,13 +158,13 @@ exports.updateProject = async (req, res) => {
       if (endDate !== undefined) project.endDate = endDate;
 
       if (goalAmount !== undefined) {
-        if (goalAmount < project.raisedAmount) {
+        if (Number(goalAmount) < Number(project.raisedAmount || 0)) {
           return res.status(400).json({
             message: "Goal cannot be less than raised amount",
           });
         }
 
-        if (goalAmount < project.goalAmount) {
+        if (Number(goalAmount) < Number(project.goalAmount || 0)) {
           return res.status(400).json({
             message: "Goal can only be increased",
           });
@@ -168,7 +182,13 @@ exports.updateProject = async (req, res) => {
     }
 
     await project.save();
-    res.json(project);
+
+    const populatedProject = await Project.findById(project._id).populate(
+      "ngo",
+      "organizationName category verified verificationStatus"
+    );
+
+    res.json(populatedProject);
   } catch (error) {
     console.error("UPDATE PROJECT ERROR:", error);
     res.status(500).json({ message: "Server error" });
@@ -231,7 +251,12 @@ exports.pauseProject = async (req, res) => {
     project.status = "paused";
     await project.save();
 
-    res.json(project);
+    const populatedProject = await Project.findById(project._id).populate(
+      "ngo",
+      "organizationName category verified verificationStatus"
+    );
+
+    res.json(populatedProject);
   } catch (error) {
     console.error("PAUSE PROJECT ERROR:", error);
     res.status(500).json({ message: "Server error" });
@@ -261,7 +286,12 @@ exports.resumeProject = async (req, res) => {
     project.status = "active";
     await project.save();
 
-    res.json(project);
+    const populatedProject = await Project.findById(project._id).populate(
+      "ngo",
+      "organizationName category verified verificationStatus"
+    );
+
+    res.json(populatedProject);
   } catch (error) {
     console.error("RESUME PROJECT ERROR:", error);
     res.status(500).json({ message: "Server error" });
@@ -297,10 +327,7 @@ exports.updateProjectStatus = async (req, res) => {
       return res.status(400).json({ message: "Invalid status" });
     }
 
-    const project = await Project.findById(req.params.id).populate(
-      "ngo",
-      "organizationName category verified verificationStatus"
-    );
+    const project = await Project.findById(req.params.id);
 
     if (!project) {
       return res.status(404).json({ message: "Project not found" });
@@ -315,9 +342,14 @@ exports.updateProjectStatus = async (req, res) => {
     project.status = status;
     await project.save();
 
+    const populatedProject = await Project.findById(project._id).populate(
+      "ngo",
+      "organizationName category verified verificationStatus"
+    );
+
     return res.status(200).json({
       message: `Project ${status === "active" ? "approved" : "rejected"} successfully`,
-      project,
+      project: populatedProject,
     });
   } catch (error) {
     console.error("UPDATE PROJECT STATUS ERROR:", error);

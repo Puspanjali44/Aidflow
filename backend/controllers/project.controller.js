@@ -19,7 +19,7 @@ exports.createProject = async (req, res) => {
       endDate,
       status: "draft",
       raisedAmount: 0,
-      ngo: ngoProfile._id
+      ngo: ngoProfile._id,
     });
 
     res.status(201).json(project);
@@ -38,7 +38,9 @@ exports.getMyProjects = async (req, res) => {
       return res.status(404).json({ message: "NGO profile not found" });
     }
 
-    const projects = await Project.find({ ngo: ngoProfile._id }).sort({ createdAt: -1 });
+    const projects = await Project.find({ ngo: ngoProfile._id })
+      .populate("ngo", "organizationName category verified verificationStatus")
+      .sort({ createdAt: -1 });
 
     const now = new Date();
 
@@ -78,7 +80,7 @@ exports.submitForReview = async (req, res) => {
 
     if (!ngoProfile.verified || ngoProfile.verificationStatus !== "approved") {
       return res.status(400).json({
-        message: "Your NGO must be verified before submitting projects for approval"
+        message: "Your NGO must be verified before submitting projects for approval",
       });
     }
 
@@ -94,7 +96,7 @@ exports.submitForReview = async (req, res) => {
 
     if (project.status !== "draft") {
       return res.status(400).json({
-        message: "Only draft projects can be submitted"
+        message: "Only draft projects can be submitted",
       });
     }
 
@@ -103,7 +105,7 @@ exports.submitForReview = async (req, res) => {
 
     res.json({
       message: "Project submitted for admin review",
-      project
+      project,
     });
   } catch (error) {
     console.error("SUBMIT FOR REVIEW ERROR:", error);
@@ -144,13 +146,13 @@ exports.updateProject = async (req, res) => {
       if (goalAmount !== undefined) {
         if (goalAmount < project.raisedAmount) {
           return res.status(400).json({
-            message: "Goal cannot be less than raised amount"
+            message: "Goal cannot be less than raised amount",
           });
         }
 
         if (goalAmount < project.goalAmount) {
           return res.status(400).json({
-            message: "Goal can only be increased"
+            message: "Goal can only be increased",
           });
         }
 
@@ -161,7 +163,7 @@ exports.updateProject = async (req, res) => {
       if (endDate !== undefined) project.endDate = endDate;
     } else {
       return res.status(400).json({
-        message: "This project cannot be edited"
+        message: "This project cannot be edited",
       });
     }
 
@@ -194,7 +196,7 @@ exports.deleteProject = async (req, res) => {
 
     if (project.status !== "draft") {
       return res.status(400).json({
-        message: "Only draft projects can be deleted"
+        message: "Only draft projects can be deleted",
       });
     }
 
@@ -222,7 +224,7 @@ exports.pauseProject = async (req, res) => {
 
     if (project.status !== "active") {
       return res.status(400).json({
-        message: "Only active projects can be paused"
+        message: "Only active projects can be paused",
       });
     }
 
@@ -252,7 +254,7 @@ exports.resumeProject = async (req, res) => {
 
     if (project.status !== "paused") {
       return res.status(400).json({
-        message: "Only paused projects can be resumed"
+        message: "Only paused projects can be resumed",
       });
     }
 
@@ -276,7 +278,7 @@ exports.adminGetAllProjects = async (req, res) => {
     }
 
     const projects = await Project.find(filter)
-      .populate("ngo", "name")
+      .populate("ngo", "organizationName category verified verificationStatus")
       .sort({ createdAt: -1 });
 
     res.json(projects);
@@ -295,7 +297,10 @@ exports.updateProjectStatus = async (req, res) => {
       return res.status(400).json({ message: "Invalid status" });
     }
 
-    const project = await Project.findById(req.params.id).populate("ngo", "name");
+    const project = await Project.findById(req.params.id).populate(
+      "ngo",
+      "organizationName category verified verificationStatus"
+    );
 
     if (!project) {
       return res.status(404).json({ message: "Project not found" });
@@ -303,7 +308,7 @@ exports.updateProjectStatus = async (req, res) => {
 
     if (!["under_review", "rejected", "active"].includes(project.status)) {
       return res.status(400).json({
-        message: "Only projects under review can be approved or rejected"
+        message: "Only projects under review can be approved or rejected",
       });
     }
 
@@ -312,7 +317,7 @@ exports.updateProjectStatus = async (req, res) => {
 
     return res.status(200).json({
       message: `Project ${status === "active" ? "approved" : "rejected"} successfully`,
-      project
+      project,
     });
   } catch (error) {
     console.error("UPDATE PROJECT STATUS ERROR:", error);
@@ -324,12 +329,31 @@ exports.updateProjectStatus = async (req, res) => {
 exports.getPublicProjects = async (req, res) => {
   try {
     const projects = await Project.find({ status: "active" })
-      .populate("ngo", "name")
+      .populate("ngo", "organizationName category verified verificationStatus")
       .sort({ createdAt: -1 });
 
     res.json(projects);
   } catch (error) {
     console.error("GET PUBLIC PROJECTS ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ================= PUBLIC GET SINGLE PROJECT =================
+exports.getProjectById = async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id).populate(
+      "ngo",
+      "organizationName category verified verificationStatus"
+    );
+
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    res.json(project);
+  } catch (error) {
+    console.error("GET PROJECT BY ID ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

@@ -1,18 +1,19 @@
 const express = require("express");
-const router = express.Router();
+const router  = express.Router();
 
-const { protect } = require("../middleware/authMiddleware");
-const { authorizeRoles } = require("../middleware/roleMiddleware");
-const upload = require("../middleware/upload");
+const { protect }         = require("../middleware/authMiddleware");
+const { authorizeRoles }  = require("../middleware/roleMiddleware");
+const upload              = require("../middleware/upload");
 
 const {
   getMyProfile,
   updateProfile,
+  uploadProfileImage,
+  uploadVerificationDocuments,
+  submitNgoForVerification,
   pauseAccount,
   deactivateAccount,
   reactivateAccount,
-  uploadVerificationDocuments,
-  submitNgoForVerification,
   getAllNgosForAdmin,
   getNgoDetailForAdmin,
   updateNgoVerificationStatus
@@ -21,6 +22,15 @@ const {
 // ================= NGO PROFILE =================
 router.get("/profile", protect, authorizeRoles("ngo"), getMyProfile);
 router.put("/profile", protect, authorizeRoles("ngo"), updateProfile);
+
+// ================= PROFILE IMAGE =================
+router.post(
+  "/upload-profile-image",
+  protect,
+  authorizeRoles("ngo"),
+  upload.single("profileImage"),
+  uploadProfileImage
+);
 
 // ================= DOCUMENT UPLOAD =================
 router.post(
@@ -39,30 +49,13 @@ router.put(
 );
 
 // ================= ACCOUNT CONTROLS =================
-router.put("/pause", protect, authorizeRoles("ngo"), pauseAccount);
+router.put("/pause",      protect, authorizeRoles("ngo"), pauseAccount);
 router.put("/deactivate", protect, authorizeRoles("ngo"), deactivateAccount);
 router.put("/reactivate", protect, authorizeRoles("ngo"), reactivateAccount);
 
 // ================= ADMIN ROUTES =================
-router.get(
-  "/admin/all-ngos",
-  protect,
-  authorizeRoles("admin"),
-  getAllNgosForAdmin
-);
-
-router.get(
-  "/admin/:id",
-  protect,
-  authorizeRoles("admin"),
-  getNgoDetailForAdmin
-);
-
-router.put(
-  "/admin/:id/status",
-  protect,
-  authorizeRoles("admin"),
-  updateNgoVerificationStatus
-);
+router.get("/admin/all-ngos",   protect, authorizeRoles("admin"), getAllNgosForAdmin);
+router.get("/admin/:id",        protect, authorizeRoles("admin"), getNgoDetailForAdmin);
+router.put("/admin/:id/status", protect, authorizeRoles("admin"), updateNgoVerificationStatus);
 
 module.exports = router;

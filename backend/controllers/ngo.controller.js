@@ -40,20 +40,36 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
+// ================= UPLOAD PROFILE IMAGE =================
+// POST /api/ngo/upload-profile-image
+exports.uploadProfileImage = async (req, res) => {
+  try {
+    const ngo = await NGO.findOne({ user: req.user._id });
+    if (!ngo) return res.status(404).json({ message: "NGO profile not found" });
+
+    if (!req.file) return res.status(400).json({ message: "No image file provided" });
+
+    ngo.profileImage = req.file.filename;
+    await ngo.save();
+
+    res.json({ message: "Profile image updated successfully", profileImage: ngo.profileImage });
+  } catch (error) {
+    console.error("UPLOAD PROFILE IMAGE ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // ================= UPLOAD VERIFICATION DOCUMENTS =================
 // POST /api/ngo/upload-documents
-// Accepts: multipart/form-data with up to 6 file fields
 exports.uploadVerificationDocuments = async (req, res) => {
   try {
     const ngo = await NGO.findOne({ user: req.user._id });
     if (!ngo) return res.status(404).json({ message: "NGO profile not found" });
 
-    // Block re-upload if already approved
     if (ngo.verificationStatus === "approved") {
       return res.status(400).json({ message: "NGO already approved. Cannot re-upload documents." });
     }
 
-    // Block re-upload if pending (submitted)
     if (ngo.verificationStatus === "pending") {
       return res.status(400).json({ message: "Documents already submitted for review. Wait for admin decision." });
     }
@@ -67,14 +83,13 @@ exports.uploadVerificationDocuments = async (req, res) => {
       "projectReport"
     ];
 
-    // Save each uploaded file
     if (req.files) {
       docFields.forEach(field => {
         if (req.files[field] && req.files[field][0]) {
           ngo.documents[field] = {
-            fileUrl: req.files[field][0].filename,
+            fileUrl:    req.files[field][0].filename,
             uploadedAt: new Date(),
-            status: "uploaded"
+            status:     "uploaded"
           };
         }
       });
@@ -99,7 +114,6 @@ exports.submitNgoForVerification = async (req, res) => {
       return res.status(400).json({ message: "NGO is already approved." });
     }
 
-    // Check all 6 documents are uploaded
     const required = [
       "registrationCertificate", "panDocument", "auditReport",
       "taxClearance", "boardMemberVerification", "projectReport"
@@ -117,7 +131,7 @@ exports.submitNgoForVerification = async (req, res) => {
     }
 
     ngo.verificationStatus = "pending";
-    ngo.verified = false;
+    ngo.verified    = false;
     ngo.adminRemark = "";
     await ngo.save();
 
@@ -132,10 +146,10 @@ exports.submitNgoForVerification = async (req, res) => {
 };
 
 // ================= ADMIN: GET ALL NGOs =================
-// GET /api/ngo/admin/all-ngos
+// GET /api/ngo/admin/all-ngos?status=pending
 exports.getAllNgosForAdmin = async (req, res) => {
   try {
-    const { status } = req.query; // optional filter: ?status=pending
+    const { status } = req.query;
     const filter = status ? { verificationStatus: status } : {};
 
     const ngos = await NGO.find(filter)
@@ -177,15 +191,12 @@ exports.updateNgoVerificationStatus = async (req, res) => {
     if (!ngo) return res.status(404).json({ message: "NGO not found" });
 
     ngo.verificationStatus = status;
-    ngo.verified = status === "approved";
+    ngo.verified    = status === "approved";
     ngo.adminRemark = remark || "";
 
     await ngo.save();
 
-    return res.status(200).json({
-      message: `NGO ${status} successfully`,
-      ngo
-    });
+    return res.status(200).json({ message: `NGO ${status} successfully`, ngo });
   } catch (error) {
     console.error("UPDATE NGO STATUS ERROR:", error);
     return res.status(500).json({ message: "Server error" });
@@ -217,15 +228,14 @@ exports.deactivateAccount = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 // ================= REACTIVATE ACCOUNT =================
 exports.reactivateAccount = async (req, res) => {
   try {
     const ngo = await NGO.findOne({ user: req.user._id });
     if (!ngo) return res.status(404).json({ message: "NGO not found" });
-
     ngo.accountStatus = "active";
     await ngo.save();
-
     res.json({ message: "Account reactivated successfully", ngo });
   } catch (error) {
     console.error("REACTIVATE ACCOUNT ERROR:", error);

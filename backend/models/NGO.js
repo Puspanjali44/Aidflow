@@ -2,8 +2,8 @@ const mongoose = require("mongoose");
 
 // ================= VERIFICATION DOCUMENT SCHEMA =================
 const verificationDocSchema = new mongoose.Schema({
-  fileUrl: { type: String, default: null },
-  uploadedAt: { type: Date, default: null },
+  fileUrl:    { type: String, default: null },
+  uploadedAt: { type: Date,   default: null },
   status: {
     type: String,
     enum: ["not_uploaded", "uploaded", "verified", "rejected"],
@@ -32,6 +32,12 @@ const ngoSchema = new mongoose.Schema(
     mission:            String,
     establishedYear:    Number,
 
+    // ================= PROFILE IMAGE =================
+    profileImage: {
+      type: String,
+      default: null
+    },
+
     // ================= VERIFICATION DOCUMENTS (6 required) =================
     documents: {
       registrationCertificate: { type: verificationDocSchema, default: () => ({}) },
@@ -54,10 +60,7 @@ const ngoSchema = new mongoose.Schema(
       default: "draft"
     },
 
-    adminRemark: {
-      type: String,
-      default: ""
-    },
+    adminRemark: { type: String, default: "" },
 
     // ================= TRANSPARENCY =================
     transparencyScore: { type: Number, default: 0 },
@@ -70,10 +73,10 @@ const ngoSchema = new mongoose.Schema(
     branch:        String,
 
     // ================= NOTIFICATION PREFERENCES =================
-    notifyNewDonation:   { type: Boolean, default: true },
-    notifyUpdateApproval:{ type: Boolean, default: true },
-    notifyMonthlyReport: { type: Boolean, default: true },
-    notifyDonorComments: { type: Boolean, default: true },
+    notifyNewDonation:    { type: Boolean, default: true },
+    notifyUpdateApproval: { type: Boolean, default: true },
+    notifyMonthlyReport:  { type: Boolean, default: true },
+    notifyDonorComments:  { type: Boolean, default: true },
 
     // ================= PUBLIC VISIBILITY =================
     showDonorNames:    { type: Boolean, default: true },

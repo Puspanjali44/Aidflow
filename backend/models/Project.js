@@ -57,7 +57,7 @@ const projectSchema = new mongoose.Schema(
       required: true
     },
 
-    // ✅ Track total spending from updates
+    //  Track total spending from updates
     totalSpent: {
       type: Number,
 

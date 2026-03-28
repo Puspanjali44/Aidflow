@@ -107,7 +107,7 @@ function CreateProject() {
               disabled={loading}
               onClick={() => handleSubmit("active")}
             >
-              {loading ? "Saving..." : "Publish Project →"}
+              {loading ? "Saving..." : "Send for apporval  →"}
             </button>
           </div>
         </div>

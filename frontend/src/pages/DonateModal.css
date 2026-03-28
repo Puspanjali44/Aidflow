@@ -143,10 +143,16 @@
   background: #1a4a7a;
   color: #fff;
   font-family: inherit;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s;
+}
+
+.dm-currency {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a4a7a;
 }
 .dm-amount-btn:hover  { background: #153d6b; }
 .dm-amount-btn.active {
@@ -168,7 +174,7 @@
   margin-bottom: 14px;
 }
 .dm-custom-wrap:focus-within { border-color: #1a4a7a; }
-.dm-currency { font-size: 16px; font-weight: 700; color: #1a4a7a; }
+
 .dm-custom-input {
   flex: 1;
   border: none;
@@ -392,6 +398,22 @@
 .dm-success-icon {
   font-size: 52px;
   animation: dmPop 0.4s ease;
+}
+.dm-amount-btn.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: #8ea3b5;
+}
+
+.dm-limit-note {
+  margin: 10px 0 2px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fff3cd;
+  color: #7a5a00;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
 }
 @keyframes dmPop { 0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); } }
 .dm-success h2 { font-size: 26px; font-weight: 800; color: #1a2a4a; }

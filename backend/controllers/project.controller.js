@@ -1,7 +1,6 @@
 const Project = require("../models/Project");
 const NGO = require("../models/NGO");
 
-
 // ================= CREATE PROJECT =================
 exports.createProject = async (req, res) => {
   try {
@@ -24,13 +23,11 @@ exports.createProject = async (req, res) => {
     });
 
     res.status(201).json(project);
-
   } catch (error) {
+    console.error("CREATE PROJECT ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
-
-
 
 // ================= GET MY PROJECTS (WITH AUTO-COMPLETE) =================
 exports.getMyProjects = async (req, res) => {
@@ -41,18 +38,22 @@ exports.getMyProjects = async (req, res) => {
       return res.status(404).json({ message: "NGO profile not found" });
     }
 
-    const projects = await Project.find({ ngo: ngoProfile._id })
-      .sort({ createdAt: -1 });
+    const projects = await Project.find({ ngo: ngoProfile._id }).sort({ createdAt: -1 });
 
     const now = new Date();
 
     for (let project of projects) {
       if (
         project.status !== "completed" &&
-        (
-          project.raisedAmount >= project.goalAmount ||
-          project.endDate < now
-        )
+        project.status !== "rejected" &&
+        project.raisedAmount >= project.goalAmount
+      ) {
+        project.status = "completed";
+        await project.save();
+      } else if (
+        project.status === "active" &&
+        project.endDate &&
+        new Date(project.endDate) < now
       ) {
         project.status = "completed";
         await project.save();
@@ -60,21 +61,25 @@ exports.getMyProjects = async (req, res) => {
     }
 
     res.json(projects);
-
   } catch (error) {
+    console.error("GET MY PROJECTS ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-
-
-// ================= SUBMIT FOR REVIEW (SMART AUTOMATION) =================
+// ================= SUBMIT FOR REVIEW =================
 exports.submitForReview = async (req, res) => {
   try {
     const ngoProfile = await NGO.findOne({ user: req.user._id });
 
     if (!ngoProfile) {
       return res.status(404).json({ message: "NGO profile not found" });
+    }
+
+    if (!ngoProfile.verified || ngoProfile.verificationStatus !== "approved") {
+      return res.status(400).json({
+        message: "Your NGO must be verified before submitting projects for approval"
+      });
     }
 
     const project = await Project.findById(req.params.id);
@@ -93,31 +98,18 @@ exports.submitForReview = async (req, res) => {
       });
     }
 
-    // 🔥 Smart Auto-Approval Rules
-    const completedProjects = await Project.countDocuments({
-      ngo: ngoProfile._id,
-      status: "completed"
-    });
-
-    if (
-      ngoProfile.isTrusted ||
-      project.goalAmount <= 50000 ||
-      completedProjects >= 3
-    ) {
-      project.status = "active";
-    } else {
-      project.status = "under_review";
-    }
-
+    project.status = "under_review";
     await project.save();
-    res.json(project);
 
+    res.json({
+      message: "Project submitted for admin review",
+      project
+    });
   } catch (error) {
+    console.error("SUBMIT FOR REVIEW ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
-
-
 
 // ================= UPDATE PROJECT =================
 exports.updateProject = async (req, res) => {
@@ -145,15 +137,11 @@ exports.updateProject = async (req, res) => {
       project.description = description ?? project.description;
       project.goalAmount = goalAmount ?? project.goalAmount;
       project.endDate = endDate ?? project.endDate;
-    }
+    } else if (project.status === "active") {
+      if (description !== undefined) project.description = description;
+      if (endDate !== undefined) project.endDate = endDate;
 
-    else if (project.status === "active") {
-
-      if (description) project.description = description;
-      if (endDate) project.endDate = endDate;
-
-      if (goalAmount) {
-
+      if (goalAmount !== undefined) {
         if (goalAmount < project.raisedAmount) {
           return res.status(400).json({
             message: "Goal cannot be less than raised amount"
@@ -168,14 +156,10 @@ exports.updateProject = async (req, res) => {
 
         project.goalAmount = goalAmount;
       }
-    }
-
-    else if (project.status === "under_review") {
-      if (description) project.description = description;
-      if (endDate) project.endDate = endDate;
-    }
-
-    else {
+    } else if (project.status === "under_review") {
+      if (description !== undefined) project.description = description;
+      if (endDate !== undefined) project.endDate = endDate;
+    } else {
       return res.status(400).json({
         message: "This project cannot be edited"
       });
@@ -183,13 +167,11 @@ exports.updateProject = async (req, res) => {
 
     await project.save();
     res.json(project);
-
   } catch (error) {
+    console.error("UPDATE PROJECT ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
-
-
 
 // ================= DELETE PROJECT =================
 exports.deleteProject = async (req, res) => {
@@ -218,13 +200,11 @@ exports.deleteProject = async (req, res) => {
 
     await project.deleteOne();
     res.json({ message: "Project deleted successfully" });
-
   } catch (error) {
+    console.error("DELETE PROJECT ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
-
-
 
 // ================= PAUSE PROJECT =================
 exports.pauseProject = async (req, res) => {
@@ -250,13 +230,11 @@ exports.pauseProject = async (req, res) => {
     await project.save();
 
     res.json(project);
-
   } catch (error) {
+    console.error("PAUSE PROJECT ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
-
-
 
 // ================= RESUME PROJECT =================
 exports.resumeProject = async (req, res) => {
@@ -282,24 +260,76 @@ exports.resumeProject = async (req, res) => {
     await project.save();
 
     res.json(project);
-
   } catch (error) {
+    console.error("RESUME PROJECT ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-
-
 // ================= ADMIN GET ALL PROJECTS =================
 exports.adminGetAllProjects = async (req, res) => {
   try {
-    const projects = await Project.find()
-      .populate("ngo")
+    const filter = {};
+
+    if (req.query.status) {
+      filter.status = req.query.status;
+    }
+
+    const projects = await Project.find(filter)
+      .populate("ngo", "name")
       .sort({ createdAt: -1 });
 
     res.json(projects);
-
   } catch (error) {
+    console.error("ADMIN GET PROJECTS ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ================= ADMIN APPROVE / REJECT PROJECT =================
+exports.updateProjectStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    if (!["active", "rejected"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    const project = await Project.findById(req.params.id).populate("ngo", "name");
+
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    if (!["under_review", "rejected", "active"].includes(project.status)) {
+      return res.status(400).json({
+        message: "Only projects under review can be approved or rejected"
+      });
+    }
+
+    project.status = status;
+    await project.save();
+
+    return res.status(200).json({
+      message: `Project ${status === "active" ? "approved" : "rejected"} successfully`,
+      project
+    });
+  } catch (error) {
+    console.error("UPDATE PROJECT STATUS ERROR:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ================= PUBLIC GET APPROVED / ACTIVE PROJECTS =================
+exports.getPublicProjects = async (req, res) => {
+  try {
+    const projects = await Project.find({ status: "active" })
+      .populate("ngo", "name")
+      .sort({ createdAt: -1 });
+
+    res.json(projects);
+  } catch (error) {
+    console.error("GET PUBLIC PROJECTS ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

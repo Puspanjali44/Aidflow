@@ -237,3 +237,23 @@
 .pdp-modal-nav button:hover { background: rgba(255,255,255,.35); }
 
 .pdp-empty { color: var(--text-3); font-style: italic; font-size: 14px; padding: 12px 0; }
+
+.pdp-ts-summary {
+  margin-top: 14px;
+  border-top: 1px solid #ece7df;
+  padding-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.pdp-ts-summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: #5d5d5d;
+}
+
+.pdp-ts-summary-row strong {
+  color: #1f2a37;
+}

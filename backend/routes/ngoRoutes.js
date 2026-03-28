@@ -3,50 +3,66 @@ const router = express.Router();
 
 const { protect } = require("../middleware/authMiddleware");
 const { authorizeRoles } = require("../middleware/roleMiddleware");
+const upload = require("../middleware/upload");
 
 const {
   getMyProfile,
   updateProfile,
   pauseAccount,
-  deactivateAccount
+  deactivateAccount,
+  reactivateAccount,
+  uploadVerificationDocuments,
+  submitNgoForVerification,
+  getAllNgosForAdmin,
+  getNgoDetailForAdmin,
+  updateNgoVerificationStatus
 } = require("../controllers/ngo.controller");
 
-
 // ================= NGO PROFILE =================
+router.get("/profile", protect, authorizeRoles("ngo"), getMyProfile);
+router.put("/profile", protect, authorizeRoles("ngo"), updateProfile);
 
-// Get logged-in NGO profile
-router.get(
-  "/profile",
+// ================= DOCUMENT UPLOAD =================
+router.post(
+  "/upload-documents",
   protect,
   authorizeRoles("ngo"),
-  getMyProfile
+  upload.uploadNgoDocs,
+  uploadVerificationDocuments
 );
 
-// Update logged-in NGO profile
 router.put(
-  "/profile",
+  "/submit-verification",
   protect,
   authorizeRoles("ngo"),
-  updateProfile
+  submitNgoForVerification
 );
-
 
 // ================= ACCOUNT CONTROLS =================
+router.put("/pause", protect, authorizeRoles("ngo"), pauseAccount);
+router.put("/deactivate", protect, authorizeRoles("ngo"), deactivateAccount);
+router.put("/reactivate", protect, authorizeRoles("ngo"), reactivateAccount);
 
-// Pause NGO account
-router.put(
-  "/pause",
+// ================= ADMIN ROUTES =================
+router.get(
+  "/admin/all-ngos",
   protect,
-  authorizeRoles("ngo"),
-  pauseAccount
+  authorizeRoles("admin"),
+  getAllNgosForAdmin
 );
 
-// Deactivate NGO account
-router.put(
-  "/deactivate",
+router.get(
+  "/admin/:id",
   protect,
-  authorizeRoles("ngo"),
-  deactivateAccount
+  authorizeRoles("admin"),
+  getNgoDetailForAdmin
+);
+
+router.put(
+  "/admin/:id/status",
+  protect,
+  authorizeRoles("admin"),
+  updateNgoVerificationStatus
 );
 
 module.exports = router;

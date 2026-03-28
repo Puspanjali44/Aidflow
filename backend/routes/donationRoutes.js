@@ -6,23 +6,17 @@ const { authorizeRoles } = require("../middleware/roleMiddleware");
 
 const {
   createDonation,
-  getMyDonations
+  getMyDonations,
+  getNgoDonations,
+  getProjectDonors,
+  getWordsOfSupport,
 } = require("../controllers/donation.controller");
 
-// Create donation
-router.post(
-  "/",
-  protect,
-  authorizeRoles("donor"),
-  createDonation
-);
+router.post("/", protect, authorizeRoles("donor"), createDonation);
+router.get("/my", protect, authorizeRoles("donor"), getMyDonations);
+router.get("/ngo", protect, authorizeRoles("ngo"), getNgoDonations);
 
-// Get donor's donation history
-router.get(
-  "/my",
-  protect,
-  authorizeRoles("donor"),
-  getMyDonations
-);
+router.get("/project/:id/donors", getProjectDonors);
+router.get("/project/:id/words-of-support", getWordsOfSupport);
 
 module.exports = router;

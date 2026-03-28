@@ -357,3 +357,22 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 
 /* MISC */
 .pd-empty { color:var(--text-3); font-style:italic; font-size:14px; padding:16px 0; }
+.pd-ts-summary {
+  margin-top: 14px;
+  border-top: 1px solid #ece7df;
+  padding-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.pd-ts-summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: #5d5d5d;
+}
+
+.pd-ts-summary-row strong {
+  color: #1f2a37;
+}

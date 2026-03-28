@@ -16,28 +16,34 @@ function LoginPage() {
   const [password, setPassword] = useState("");
 
   const handleLogin = async () => {
-    try {
-      const res = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+  try {
+    const res = await fetch("http://localhost:5000/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (res.ok) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("role", data.role);
+    if (res.ok) {
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("role", data.role);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
-        if (data.role === "donor") navigate("/donor-dashboard");
-        else navigate("/ngo-dashboard");
+      if (data.role === "admin") {
+        navigate("/admin");
+      } else if (data.role === "ngo") {
+        navigate("/ngo-dashboard");
       } else {
-        alert(data.message);
+        navigate("/donor-dashboard");
       }
-    } catch {
-      alert("Server error");
+    } else {
+      alert(data.message);
     }
-  };
+  } catch {
+    alert("Server error");
+  }
+};
 
   const handleRegister = async () => {
     try {

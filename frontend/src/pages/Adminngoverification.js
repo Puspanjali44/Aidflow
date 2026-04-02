@@ -25,6 +25,7 @@ export default function AdminNgoVerification() {
   const [filter, setFilter] = useState("pending");
   const [selected, setSelected] = useState(null);
   const [remark, setRemark] = useState("");
+  const [flagReason, setFlagReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState(null);
@@ -44,10 +45,13 @@ export default function AdminNgoVerification() {
     setPageError("");
 
     try {
-      const url =
-        filter === "all"
-          ? `${API}/api/ngo/admin/all-ngos`
-          : `${API}/api/ngo/admin/all-ngos?status=${filter}`;
+      let url = `${API}/api/ngo/admin/all-ngos`;
+
+      if (filter === "flagged") {
+        url = `${API}/api/ngo/admin/all-ngos?flagged=true`;
+      } else if (filter !== "all") {
+        url = `${API}/api/ngo/admin/all-ngos?status=${filter}`;
+      }
 
       const res = await axios.get(url, { headers });
       setNgos(Array.isArray(res.data) ? res.data : []);
@@ -69,6 +73,7 @@ export default function AdminNgoVerification() {
       const res = await axios.get(`${API}/api/ngo/admin/${id}`, { headers });
       setSelected(res.data);
       setRemark(res.data.adminRemark || "");
+      setFlagReason(res.data.flagReason || "");
       setMessage(null);
     } catch (err) {
       console.error("OPEN DETAIL ERROR:", err);
@@ -119,6 +124,81 @@ export default function AdminNgoVerification() {
     }
   };
 
+  const handleFlagNgo = async () => {
+    if (!selected) return;
+
+    if (!flagReason.trim()) {
+      setMessage({
+        type: "error",
+        text: "Please enter a reason before flagging this NGO."
+      });
+      return;
+    }
+
+    setActionLoading(true);
+
+    try {
+      await axios.put(
+        `${API}/api/ngo/admin/${selected._id}/flag`,
+        { flagged: true, flagReason },
+        { headers }
+      );
+
+      setMessage({
+        type: "success",
+        text: "NGO flagged for admin review."
+      });
+
+      const refreshed = await axios.get(`${API}/api/ngo/admin/${selected._id}`, {
+        headers
+      });
+      setSelected(refreshed.data);
+      fetchNgos();
+    } catch (err) {
+      console.error("FLAG NGO ERROR:", err);
+      setMessage({
+        type: "error",
+        text: err.response?.data?.message || "Failed to flag NGO."
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleClearFlag = async () => {
+    if (!selected) return;
+
+    setActionLoading(true);
+
+    try {
+      await axios.put(
+        `${API}/api/ngo/admin/${selected._id}/flag`,
+        { flagged: false, flagReason: "" },
+        { headers }
+      );
+
+      setMessage({
+        type: "success",
+        text: "Flag removed successfully."
+      });
+
+      const refreshed = await axios.get(`${API}/api/ngo/admin/${selected._id}`, {
+        headers
+      });
+      setSelected(refreshed.data);
+      setFlagReason("");
+      fetchNgos();
+    } catch (err) {
+      console.error("CLEAR FLAG ERROR:", err);
+      setMessage({
+        type: "error",
+        text: err.response?.data?.message || "Failed to clear flag."
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const docKeys = Object.keys(DOC_LABELS);
 
   return (
@@ -126,11 +206,11 @@ export default function AdminNgoVerification() {
       <div className="admin-verify-header">
         <div>
           <h1>NGO Verification</h1>
-          <p>Review submitted documents and approve or reject NGO applications.</p>
+          <p>Review submitted documents, approve or reject NGOs, and flag suspicious cases.</p>
         </div>
 
         <div className="filter-tabs">
-          {["pending", "approved", "rejected", "all"].map((s) => (
+          {["pending", "approved", "rejected", "flagged", "all"].map((s) => (
             <button
               key={s}
               className={`tab ${filter === s ? "active" : ""}`}
@@ -148,7 +228,7 @@ export default function AdminNgoVerification() {
         <div className="loading-state">Loading NGOs...</div>
       ) : ngos.length === 0 ? (
         <div className="empty-state">
-          No NGOs with status <strong>{filter}</strong>.
+          No NGOs found for <strong>{filter}</strong>.
         </div>
       ) : (
         <div className="ngo-list">
@@ -173,6 +253,12 @@ export default function AdminNgoVerification() {
                       {ngo.location || "No location"}
                     </p>
                     <p className="doc-count">{uploadedDocs}/6 documents uploaded</p>
+
+                    {ngo.flagged && (
+                      <p className="flag-row">
+                        🚩 Flagged {ngo.flagReason ? `· ${ngo.flagReason}` : ""}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -183,6 +269,10 @@ export default function AdminNgoVerification() {
                   >
                     {ngo.verificationStatus}
                   </span>
+
+                  {ngo.flagged && (
+                    <span className="flag-badge">Flagged</span>
+                  )}
 
                   <button
                     className="btn-review"
@@ -241,6 +331,13 @@ export default function AdminNgoVerification() {
               </div>
             )}
 
+            {selected.flagged && (
+              <div className="flagged-panel">
+                <strong>🚩 Flagged for Review</strong>
+                <p>{selected.flagReason || "No reason provided."}</p>
+              </div>
+            )}
+
             <h3 className="docs-heading">Submitted Documents</h3>
             <div className="docs-grid">
               {docKeys.map((key) => {
@@ -277,49 +374,79 @@ export default function AdminNgoVerification() {
               </div>
             )}
 
-            {selected.verificationStatus !== "approved" && (
-              <>
-                <div className="remark-area">
-                  <label>
-                    Admin Remark <span className="req">(required for rejection)</span>
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={remark}
-                    onChange={(e) => setRemark(e.target.value)}
-                    placeholder="Add a remark or feedback for the NGO..."
-                  />
-                </div>
+            <div className="remark-area">
+              <label>
+                Admin Remark <span className="req">(required for rejection)</span>
+              </label>
+              <textarea
+                rows={3}
+                value={remark}
+                onChange={(e) => setRemark(e.target.value)}
+                placeholder="Add approval or rejection remark..."
+              />
+            </div>
 
-                {message && (
-                  <div
-                    className={`message ${
-                      message.type === "error" ? "error" : "success"
-                    }`}
-                  >
-                    {message.text}
-                  </div>
-                )}
+            <div className="remark-area">
+              <label>
+                Flag Reason <span className="req">(required for flagging)</span>
+              </label>
+              <textarea
+                rows={3}
+                value={flagReason}
+                onChange={(e) => setFlagReason(e.target.value)}
+                placeholder="Explain why this NGO looks suspicious..."
+              />
+            </div>
 
-                <div className="modal-actions">
-                  <button
-                    className="btn-reject"
-                    onClick={() => handleAction("rejected")}
-                    disabled={actionLoading}
-                  >
-                    {actionLoading ? "Processing..." : "✕ Reject"}
-                  </button>
-
-                  <button
-                    className="btn-approve"
-                    onClick={() => handleAction("approved")}
-                    disabled={actionLoading}
-                  >
-                    {actionLoading ? "Processing..." : "✓ Approve NGO"}
-                  </button>
-                </div>
-              </>
+            {message && (
+              <div
+                className={`message ${
+                  message.type === "error" ? "error" : "success"
+                }`}
+              >
+                {message.text}
+              </div>
             )}
+
+            <div className="modal-actions">
+              {!selected.flagged ? (
+                <button
+                  className="btn-flag"
+                  onClick={handleFlagNgo}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? "Processing..." : "🚩 Flag NGO"}
+                </button>
+              ) : (
+                <button
+                  className="btn-clear-flag"
+                  onClick={handleClearFlag}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? "Processing..." : "✓ Clear Flag"}
+                </button>
+              )}
+
+              {selected.verificationStatus !== "approved" && (
+                <button
+                  className="btn-reject"
+                  onClick={() => handleAction("rejected")}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? "Processing..." : "✕ Reject"}
+                </button>
+              )}
+
+              {selected.verificationStatus !== "approved" && (
+                <button
+                  className="btn-approve"
+                  onClick={() => handleAction("approved")}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? "Processing..." : "✓ Approve NGO"}
+                </button>
+              )}
+            </div>
 
             {selected.verificationStatus === "approved" && (
               <div className="already-approved">

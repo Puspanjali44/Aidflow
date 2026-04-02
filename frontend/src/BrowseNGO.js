@@ -17,31 +17,27 @@ function BrowseNGO() {
     try {
       const res = await axios.get("http://localhost:5000/api/projects/public");
       setProjects(Array.isArray(res.data) ? res.data : []);
-      console.log("PUBLIC PROJECTS:", res.data);
     } catch (error) {
       console.error("Error fetching projects:", error);
       setProjects([]);
     }
   };
 
-  const getNgoName = (project) =>
-    project?.ngo?.organizationName ||
-    project?.ngo?.name ||
-    project?.ngoName ||
-    "Organization";
+  // ✅ FIXED NGO NAME (NO MORE "Organization" OR "ffff")
+  
+  const getNgoName = (project) => {
+  if (project?.ngo?.organizationName) return project.ngo.organizationName;
+
+  // fallback ONLY if really missing
+  if (project?.title) return project.title;
+
+  return "Unknown Organization"; // no more "NGO"
+};
 
   const getNgoCategory = (project) =>
     project?.ngo?.category ||
     project?.ngoCategory ||
     "Non-Profit";
-
-  const getInitial = (name) => (name ? name.charAt(0).toUpperCase() : "?");
-
-  const getAvatarColor = (name) => {
-    const colors = ["#1e5631", "#d4a843", "#2d6a4f", "#8B5E3C", "#3B82F6"];
-    if (!name) return colors[0];
-    return colors[name.charCodeAt(0) % colors.length];
-  };
 
   const filtered = projects.filter((p) => {
     const q = search.toLowerCase().trim();
@@ -103,13 +99,20 @@ function BrowseNGO() {
                     animationDelay: `${index * 0.06}s`,
                   }}
                 >
+                  {/* ✅ COVER IMAGE */}
                   <div className="ngo-card-image">
-                    <div
-                      className="ngo-avatar"
-                      style={{ background: getAvatarColor(ngoName) }}
-                    >
-                      {getInitial(ngoName)}
-                    </div>
+                    <img
+                      src={
+                        project.image
+                          ? `http://localhost:5000/uploads/${project.image}`
+                          : "/default.jpg"
+                      }
+                      alt={project.title}
+                      className="ngo-cover-img"
+                      onError={(e) => {
+                        e.target.src = "/default.jpg";
+                      }}
+                    />
                   </div>
 
                   <div className="ngo-card-body">
@@ -118,16 +121,28 @@ function BrowseNGO() {
                       <span className="verified-badge">✓ Verified</span>
                     </div>
 
-                    {/* THIS IS THE NGO NAME */}
-                    <h3 className="ngo-name">{ngoName}</h3>
+                   {ngoName && (
+  <h2 className="ngo-main-name">{ngoName}</h2>
+)}
 
-                    {/* THIS IS THE PROJECT TITLE */}
-                    <p className="ngo-desc">{project.title || "Untitled Project"}</p>
+                    {/* ✅ ONLY SHOW TITLE IF NOT GARBAGE */}
+                    {project.title && project.title !== "ffff" && (
+                      <p className="ngo-subtitle">{project.title}</p>
+                    )}
+
+                    {/* ✅ COMPLETED BADGE */}
+                    {goalAmount > 0 && raisedAmount >= goalAmount && (
+                      <div className="ngo-completed-badge">
+                        🎉 Goal Completed
+                      </div>
+                    )}
 
                     {goalAmount > 0 && (
                       <div className="ngo-progress-section">
                         <div className="ngo-progress-row">
-                          <span>NPR {raisedAmount.toLocaleString("en-IN")} raised</span>
+                          <span>
+                            NPR {raisedAmount.toLocaleString("en-IN")} raised
+                          </span>
                           <span>{progress}%</span>
                         </div>
 
@@ -141,7 +156,10 @@ function BrowseNGO() {
                     )}
 
                     <div className="ngo-card-footer">
-                      <span className="ngo-donors">👥 {donorCount} donors</span>
+                      <span className="ngo-donors">
+                        👥 {donorCount} donors
+                      </span>
+
                       <button
                         className="view-project-btn"
                         onClick={() => navigate(`/project/${project._id}`)}

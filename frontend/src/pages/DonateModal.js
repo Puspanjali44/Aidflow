@@ -5,7 +5,7 @@ const BASE = "http://localhost:5000";
 const API = `${BASE}/api`;
 
 const PRESET_AMOUNTS = [1000, 2500, 5000, 7500, 10000];
-const PLATFORM_FEE_RATE = 0.0845; // 8.45% platform fee
+const PLATFORM_FEE_RATE = 0.0845;
 
 const formatNPR = (amount) =>
   `NPR ${Number(amount || 0).toLocaleString("en-NP")}`;
@@ -15,6 +15,7 @@ const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
 export default function DonateModal({ project, onClose }) {
   const [step, setStep] = useState("amount");
   const [donationType, setDonationType] = useState("one-time");
+  const [paymentMethod, setPaymentMethod] = useState("khalti");
 
   const [selectedAmt, setSelectedAmt] = useState(PRESET_AMOUNTS[0]);
   const [customAmt, setCustomAmt] = useState("");
@@ -39,7 +40,8 @@ export default function DonateModal({ project, onClose }) {
   const raisedAmount = Number(project?.raisedAmount || 0);
   const remainingAmount = Math.max(goalAmount - raisedAmount, 0);
 
-  const enteredAmount = customAmt !== "" ? Number(customAmt) : Number(selectedAmt || 0);
+  const enteredAmount =
+    customAmt !== "" ? Number(customAmt) : Number(selectedAmt || 0);
 
   const baseAmount =
     remainingAmount > 0 ? clamp(enteredAmount || 0, 0, remainingAmount) : 0;
@@ -87,6 +89,25 @@ export default function DonateModal({ project, onClose }) {
     setStep("details");
   };
 
+  const getPayload = () => ({
+    projectId: project._id,
+    amount: totalAmount,
+    baseAmount,
+    platformFee,
+    currency: "NPR",
+    donationType,
+    donorName: form.anonymous
+      ? "Anonymous"
+      : `${form.firstName} ${form.lastName}`,
+    receiptName: form.receiptName || `${form.firstName} ${form.lastName}`,
+    email: form.email,
+    message: form.message,
+    anonymous: form.anonymous,
+    address: form.address,
+    city: form.city,
+    country: form.country,
+  });
+
   const handleDonate = async () => {
     if (projectFull) {
       alert("This project has already reached its goal.");
@@ -109,41 +130,38 @@ export default function DonateModal({ project, onClose }) {
 
     try {
       const token = localStorage.getItem("token");
+      const payload = getPayload();
 
-      const payload = {
-        projectId: project._id,
-        amount: totalAmount,
-        baseAmount,
-        platformFee,
-        currency: "NPR",
-        donationType,
-        donorName: form.anonymous
-          ? "Anonymous"
-          : `${form.firstName} ${form.lastName}`,
-        receiptName:
-          form.receiptName || `${form.firstName} ${form.lastName}`,
-        email: form.email,
-        message: form.message,
-        anonymous: form.anonymous,
-        address: form.address,
-        city: form.city,
-        country: form.country,
-      };
+      if (paymentMethod === "khalti") {
+        const r = await fetch(`${API}/payments/khalti/initiate`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify(payload),
+        });
 
-      const r = await fetch(`${API}/donations`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(payload),
-      });
+        const data = await r.json();
 
-      if (!r.ok) {
-        throw new Error((await r.json()).message || "Donation failed");
+        if (!r.ok) {
+          throw new Error(data.message || "Failed to initiate Khalti payment");
+        }
+
+        if (!data.payment_url) {
+          throw new Error("Khalti payment URL not received");
+        }
+
+        window.location.href = data.payment_url;
+        return;
       }
 
-      setStep("success");
+      if (paymentMethod === "esewa") {
+        alert("eSewa integration not connected yet. Please use Khalti.");
+        return;
+      }
+
+      alert("Please use Khalti for now.");
     } catch (e) {
       alert(e.message || "Something went wrong. Please try again.");
     } finally {
@@ -162,11 +180,17 @@ export default function DonateModal({ project, onClose }) {
             <div className="dm-success-icon">💜</div>
             <h2>Thank you!</h2>
             <p>
-              Your donation of <strong>{formatNPR(totalAmount)}</strong> to{" "}
+              Your{" "}
+              <strong>
+                {donationType === "monthly" ? "monthly" : "one-time"}
+              </strong>{" "}
+              donation of <strong>{formatNPR(totalAmount)}</strong> to{" "}
               <strong>{project.title}</strong> was received.
             </p>
             <p className="dm-success-sub">
-              A receipt will be sent to {form.email}
+              {donationType === "monthly"
+                ? `Your next monthly donation will be processed automatically. Receipt sent to ${form.email}.`
+                : `A receipt will be sent to ${form.email}.`}
             </p>
             <button className="dm-btn-primary dm-full" onClick={onClose}>
               Close
@@ -293,6 +317,12 @@ export default function DonateModal({ project, onClose }) {
                   </span>
                 </div>
 
+                {donationType === "monthly" && !projectFull && (
+                  <div className="dm-limit-note">
+                    Monthly donations will repeat every month until cancelled.
+                  </div>
+                )}
+
                 {exceedsRemaining && !projectFull && (
                   <div className="dm-limit-note">
                     You can donate up to {formatNPR(remainingAmount)} only.
@@ -306,10 +336,45 @@ export default function DonateModal({ project, onClose }) {
                 )}
 
                 <div className="dm-payment-icons">
-                  <span className="dm-pay-chip esewa">eSewa</span>
-                  <span className="dm-pay-chip khalti">Khalti</span>
-                  <span className="dm-pay-chip">VISA</span>
-                  <span className="dm-pay-chip">MC</span>
+                  <button
+                    type="button"
+                    className={`dm-pay-chip esewa ${
+                      paymentMethod === "esewa" ? "active" : ""
+                    }`}
+                    onClick={() => setPaymentMethod("esewa")}
+                  >
+                    eSewa
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`dm-pay-chip khalti ${
+                      paymentMethod === "khalti" ? "active" : ""
+                    }`}
+                    onClick={() => setPaymentMethod("khalti")}
+                  >
+                    Khalti
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`dm-pay-chip ${
+                      paymentMethod === "visa" ? "active" : ""
+                    }`}
+                    onClick={() => setPaymentMethod("visa")}
+                  >
+                    VISA
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`dm-pay-chip ${
+                      paymentMethod === "mc" ? "active" : ""
+                    }`}
+                    onClick={() => setPaymentMethod("mc")}
+                  >
+                    MC
+                  </button>
                 </div>
 
                 <button
@@ -509,7 +574,16 @@ export default function DonateModal({ project, onClose }) {
                   <div className="dm-summary-row">
                     <span>Type</span>
                     <strong style={{ textTransform: "capitalize" }}>
-                      {donationType}
+                      {donationType === "monthly"
+                        ? "Monthly recurring"
+                        : "One-time"}
+                    </strong>
+                  </div>
+
+                  <div className="dm-summary-row">
+                    <span>Payment</span>
+                    <strong style={{ textTransform: "capitalize" }}>
+                      {paymentMethod}
                     </strong>
                   </div>
 
@@ -545,6 +619,12 @@ export default function DonateModal({ project, onClose }) {
                     ℹ️ Covering platform costs ensures 100% of your donation
                     goes to the project
                   </div>
+
+                  {donationType === "monthly" && (
+                    <div className="dm-breakdown-hint">
+                      🔁 This donation will repeat every month until cancelled.
+                    </div>
+                  )}
                 </div>
 
                 <div className="dm-currency-row">
@@ -563,6 +643,8 @@ export default function DonateModal({ project, onClose }) {
                 >
                   {submitting
                     ? "Processing…"
+                    : paymentMethod === "khalti"
+                    ? `Pay with Khalti ${formatNPR(totalAmount)}`
                     : `♥ Donate ${formatNPR(totalAmount)}`}
                 </button>
 

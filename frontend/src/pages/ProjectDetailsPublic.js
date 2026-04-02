@@ -80,7 +80,6 @@ export default function ProjectDetailsPublic() {
 
   const fetchDonors = useCallback(async () => {
     try {
-      // fixed: same endpoint as NGO page
       const r = await fetch(`${API}/donations/project/${id}/donors`);
       if (!r.ok) return;
       const d = await r.json();
@@ -92,7 +91,6 @@ export default function ProjectDetailsPublic() {
 
   const fetchWords = useCallback(async () => {
     try {
-      // fixed: same endpoint as NGO page
       const r = await fetch(`${API}/donations/project/${id}/words-of-support`);
       if (!r.ok) return;
       const d = await r.json();
@@ -246,6 +244,15 @@ export default function ProjectDetailsPublic() {
     proof_photos: computedTransparency.proof_photos,
   };
 
+  const ngoName =
+    project?.ngo?.organizationName ||
+    project?.ngo?.name ||
+    "Unknown NGO";
+
+  const ngoCategory =
+    project?.ngo?.category ||
+    "Non-Profit";
+
   const heroSrc =
     (project.image ? imgUrl(project.image) : null) ||
     "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=1200&q=80";
@@ -274,21 +281,22 @@ export default function ProjectDetailsPublic() {
         <div className="pdp-body">
           <div className="pdp-left">
             <section className="pdp-card">
+              <p className="pdp-top-ngo-name">{ngoName}</p>
               <h1 className="pdp-title">{project.title}</h1>
               <p className="pdp-desc">{project.description}</p>
 
-              {project.ngo && (
-                <div className="pdp-ngo-row">
-                  <div className="pdp-ngo-avatar">
-                    {project.ngo.organizationName?.[0]?.toUpperCase() || "N"}
-                  </div>
-                  <div>
-                    <p className="pdp-ngo-name">{project.ngo.organizationName}</p>
-                    <p className="pdp-ngo-cat">{project.ngo.category || "Non-Profit"}</p>
-                  </div>
-                  <span className="pdp-verified-badge">✓ Verified</span>
+              <div className="pdp-ngo-row">
+                <div className="pdp-ngo-avatar">
+                  {ngoName?.[0]?.toUpperCase() || "N"}
                 </div>
-              )}
+
+                <div className="pdp-ngo-info">
+                  <p className="pdp-ngo-name">{ngoName}</p>
+                  <p className="pdp-ngo-cat">{ngoCategory}</p>
+                </div>
+
+                <span className="pdp-verified-badge">✓ Verified</span>
+              </div>
             </section>
 
             <section className="pdp-card">

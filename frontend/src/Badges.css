@@ -1,8 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
-/* ============================================================
-   BADGES PAGE
-   ============================================================ */
 .badges-wrapper {
   display: flex;
   min-height: 100vh;
@@ -26,28 +23,37 @@
 .badges-subtitle {
   font-size: 15px;
   color: #7a7a7a;
-  margin: 0 0 32px;
+  margin: 0 0 28px;
 }
 
-/* ============================================================
-   PROGRESS BANNER — green
-   ============================================================ */
-.badges-progress-banner {
-  background: linear-gradient(135deg, #1e5631, #2d6a4f);
+.badges-top-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.badges-progress-banner,
+.points-card {
   border-radius: 16px;
   padding: 28px 32px;
-  color: white;
-  margin-bottom: 40px;
 }
 
-.progress-banner-top {
+.badges-progress-banner {
+  background: linear-gradient(135deg, #1e5631, #2d6a4f);
+  color: white;
+}
+
+.progress-banner-top,
+.points-card-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
 }
 
-.progress-banner-top h3 {
+.progress-banner-top h3,
+.points-card-top h3 {
   font-family: 'Playfair Display', serif;
   font-size: 18px;
   font-weight: 700;
@@ -57,33 +63,111 @@
 .progress-banner-top span {
   font-size: 14px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.85);
 }
 
-.progress-banner-bar {
+.progress-banner-bar,
+.level-track {
   height: 10px;
-  background: rgba(255, 255, 255, 0.18);
   border-radius: 99px;
   overflow: hidden;
   margin-bottom: 12px;
 }
 
+.progress-banner-bar {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .progress-banner-fill {
   height: 100%;
-  background: rgba(255, 255, 255, 0.55);
+  background: linear-gradient(90deg, #ffffff, #d8f3dc);
   border-radius: 99px;
   transition: width 0.6s ease;
 }
 
 .progress-banner-hint {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.75);
   margin: 0;
 }
 
-/* ============================================================
-   SECTION TITLES — Earned / Locked
-   ============================================================ */
+.points-card {
+  background: #ffffff;
+  border: 1px solid #e5e2db;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04);
+}
+
+.level-badge {
+  background: #eef7f0;
+  color: #1e5631;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.points-number {
+  font-family: 'Playfair Display', serif;
+  font-size: 34px;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin-bottom: 10px;
+}
+
+.points-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #6b7280;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+.level-track {
+  background: #ece8df;
+}
+
+.level-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1e5631, #63a37c);
+  border-radius: 99px;
+  transition: width 0.6s ease;
+}
+
+.level-hint {
+  font-size: 13px;
+  color: #7a7a7a;
+  margin: 0;
+}
+
+.stats-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 34px;
+}
+
+.mini-stat-card {
+  background: #fff;
+  border: 1px solid #e5e2db;
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+
+.mini-stat-label {
+  display: block;
+  font-size: 12px;
+  color: #7a7a7a;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mini-stat-value {
+  font-size: 20px;
+  color: #1a1a1a;
+}
+
 .badges-section-title {
   font-family: 'Playfair Display', serif;
   font-size: 20px;
@@ -92,9 +176,6 @@
   margin: 0 0 20px;
 }
 
-/* ============================================================
-   BADGES GRID
-   ============================================================ */
 .badges-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -102,35 +183,65 @@
   margin-bottom: 40px;
 }
 
-/* ============================================================
-   BADGE CARD
-   ============================================================ */
 .badge-card {
+  position: relative;
   background: #ffffff;
   border: 1px solid #e5e2db;
   border-radius: 14px;
   padding: 28px 20px;
   text-align: center;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.25s ease;
 }
 
-.badge-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+.badge-card.earned {
+  border: 1px solid #d8f3dc;
+  background: linear-gradient(145deg, #ffffff, #f1fdf5);
+  box-shadow: 0 6px 20px rgba(45, 106, 79, 0.15);
+}
+
+.badge-card.earned:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 30px rgba(45, 106, 79, 0.25);
+}
+
+.badge-card.earned::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 14px;
+  background: linear-gradient(120deg, transparent, #95d5b2, transparent);
+  opacity: 0.4;
+  z-index: -1;
 }
 
 .badge-card.locked {
   opacity: 0.55;
+  filter: grayscale(40%);
 }
 
 .badge-card.locked:hover {
   opacity: 0.7;
+  transform: scale(1.01);
+}
+
+.badge-card.locked::after {
+  content: "🔒";
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-size: 14px;
+  opacity: 0.6;
 }
 
 .badge-emoji {
-  font-size: 40px;
+  font-size: 42px;
   margin-bottom: 14px;
   line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.badge-card.earned:hover .badge-emoji {
+  transform: scale(1.15) rotate(5deg);
 }
 
 .badge-name {
@@ -147,22 +258,128 @@
   line-height: 1.45;
 }
 
-/* ============================================================
-   ANIMATIONS
-   ============================================================ */
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+.leaderboard-card {
+  background: #ffffff;
+  border: 1px solid #e5e2db;
+  border-radius: 16px;
+  padding: 10px 0;
+  margin-bottom: 40px;
 }
 
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.leaderboard-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0ece5;
+}
+
+.leaderboard-row:last-child {
+  border-bottom: none;
+}
+
+.leaderboard-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.leaderboard-rank {
+  font-weight: 700;
+  color: #1e5631;
+  width: 32px;
+}
+
+.leaderboard-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  background: #e7f1ea;
+  color: #1e5631;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.leaderboard-name {
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.leaderboard-sub {
+  font-size: 13px;
+  color: #7a7a7a;
+}
+
+.leaderboard-right {
+  text-align: right;
+}
+
+.leaderboard-points {
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.leaderboard-amount {
+  font-size: 13px;
+  color: #7a7a7a;
+}
+
+.badges-empty {
+  background: #fff;
+  border: 1px dashed #d8d2c7;
+  border-radius: 14px;
+  padding: 18px;
+  color: #7a7a7a;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 1024px) {
-  .badges-grid { grid-template-columns: repeat(2, 1fr); }
+  .badges-top-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .badges-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stats-mini-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
-  .badges-content { padding: 24px 20px; }
-  .badges-grid { grid-template-columns: 1fr; }
+  .badges-content {
+    padding: 24px 20px;
+  }
+
+  .badges-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .leaderboard-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .leaderboard-right {
+    text-align: left;
+  }
 }

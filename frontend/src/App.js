@@ -21,6 +21,7 @@ import ProjectDetailsPublic from "./pages/ProjectDetailsPublic";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import AdminSettings from "./pages/AdminSettings";
 import "./pages/Admin.css";
+import KhaltiReturn from "./pages/KhaltiReturn";
 
 function App() {
   return (
@@ -37,7 +38,7 @@ function App() {
         <Route path="/my-donations" element={<MyDonations />} />
         <Route path="/badges" element={<Badges />} />
 
-        {/* DONOR — project detail page */}
+        {/* DONOR PROJECT DETAIL */}
         <Route path="/project/:id" element={<ProjectDetailsPublic />} />
 
         {/* NGO ROUTES */}
@@ -47,8 +48,11 @@ function App() {
         <Route path="/settings" element={<NgoSettings />} />
         <Route path="/analytics" element={<Analytics />} />
 
-        {/* NGO — project detail page */}
+        {/* NGO PROJECT DETAIL */}
         <Route path="/projects/:id" element={<ProjectDetails />} />
+
+        {/* KHALTI RETURN */}
+        <Route path="/khalti-return" element={<KhaltiReturn />} />
 
         {/* ADMIN ROUTES */}
         <Route path="/admin" element={<AdminLayout />}>
@@ -56,7 +60,7 @@ function App() {
           <Route path="ngo-verification" element={<AdminNgoVerification />} />
           <Route path="project-approval" element={<ProjectApprovalPage />} />
           <Route path="analytics" element={<AdminAnalytics />} />
-         <Route path="settings" element={<AdminSettings />} />
+          <Route path="settings" element={<AdminSettings />} />
         </Route>
       </Routes>
     </Router>

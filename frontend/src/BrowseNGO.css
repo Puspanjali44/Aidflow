@@ -248,7 +248,44 @@
 .empty-browse p {
   font-size: 14px;
 }
+.ngo-cover-img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 12px 12px 0 0;
+}
 
+.ngo-completed-badge {
+  background: #d8f3dc;
+  color: #1e5631;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 20px;
+  display: inline-block;
+  margin-bottom: 8px;
+}
+.ngo-main-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+
+.ngo-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 12px;
+}
+.ngo-done {
+  background: #dcfce7;
+  color: #166534;
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 20px;
+  display: inline-block;
+  margin-bottom: 10px;
+}
 /* ============================================================
    ANIMATIONS
    ============================================================ */

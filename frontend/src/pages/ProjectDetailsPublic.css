@@ -253,6 +253,31 @@
   font-size: 13px;
   color: #5d5d5d;
 }
+.pdp-ngo-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pdp-ngo-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.pdp-ngo-cat {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.pdp-top-ngo-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2d6a4f;
+  margin: 0 0 8px 0;
+}
 
 .pdp-ts-summary-row strong {
   color: #1f2a37;

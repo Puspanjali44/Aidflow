@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import DonorSidebar from "../components/DonorSidebar";
 import "./MyDonation.css";
 
 function MyDonations() {
   const [donations, setDonations] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchDonations();
@@ -20,8 +22,7 @@ function MyDonations() {
         },
       });
 
-      console.log("DONATIONS:", res.data);
-      setDonations(res.data);
+      setDonations(res.data || []);
     } catch (error) {
       console.error("Error fetching donations", error);
     }
@@ -40,27 +41,15 @@ function MyDonations() {
     return colors[name.charCodeAt(0) % colors.length];
   };
 
-  // Simple month grouping for chart
-  const monthTotals = {};
-  donations.forEach((d) => {
-    const date = new Date(d.createdAt);
-    const key = date.toLocaleString("default", { month: "short" });
-    monthTotals[key] = (monthTotals[key] || 0) + d.amount;
-  });
-  const chartMonths = Object.keys(monthTotals);
-  const chartValues = Object.values(monthTotals);
-  const maxVal = Math.max(...chartValues, 1);
-
   return (
     <div className="mydon-wrapper">
       <DonorSidebar />
 
       <div className="mydon-content">
-        {/* Header */}
         <h1 className="mydon-title">My Donations</h1>
         <p className="mydon-subtitle">View and manage all your contributions.</p>
 
-        {/* 3 Summary Cards */}
+        {/* Total */}
         <div className="mydon-stats">
           <div className="mydon-stat green-stat">
             <div className="mydon-stat-label">TOTAL DONATED</div>
@@ -71,62 +60,14 @@ function MyDonations() {
               {donations.length} donation{donations.length !== 1 ? "s" : ""} total
             </div>
           </div>
-
-          <div className="mydon-stat">
-            <div className="mydon-stat-label">THIS MONTH</div>
-            <div className="mydon-stat-value">
-              NPR{" "}
-              {donations
-                .filter((d) => {
-                  const now = new Date();
-                  const created = new Date(d.createdAt);
-                  return (
-                    created.getMonth() === now.getMonth() &&
-                    created.getFullYear() === now.getFullYear()
-                  );
-                })
-                .reduce((s, d) => s + d.amount, 0)
-                .toLocaleString()}
-            </div>
-            <div className="mydon-stat-sub">↑ from last month</div>
-          </div>
-
-          <div className="mydon-stat">
-            <div className="mydon-stat-label">RECURRING</div>
-            <div className="mydon-stat-value">0</div>
-            <div className="mydon-stat-sub">Active recurring donations</div>
-          </div>
         </div>
 
-        {/* Monthly Giving Chart */}
-        {chartMonths.length > 0 && (
-          <div className="mydon-chart-card">
-            <h3>Monthly Giving</h3>
-            <div className="bar-chart">
-              {chartMonths.map((month, i) => (
-                <div className="bar-col" key={month}>
-                  <div className="bar-track">
-                    <div
-                      className="bar-fill"
-                      style={{ height: `${(chartValues[i] / maxVal) * 100}%` }}
-                    />
-                  </div>
-                  <span className="bar-label">{month}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* All Donations List */}
+        {/* Donation List */}
         <div className="mydon-list-section">
-          <div className="mydon-list-header">
-            <h3>All Donations</h3>
-          </div>
+          <h3>All Donations</h3>
 
           {donations.length === 0 ? (
             <div className="mydon-empty">
-              <div className="mydon-empty-icon">🤝</div>
               <p>No donations yet.</p>
             </div>
           ) : (
@@ -134,11 +75,16 @@ function MyDonations() {
               <div
                 key={donation._id}
                 className="mydon-row"
+                onClick={() =>
+                  navigate(`/project/${donation.project?._id}`)
+                }
                 style={{
+                  cursor: "pointer",
                   animation: "slideUp 0.4s ease both",
                   animationDelay: `${index * 0.05}s`,
                 }}
               >
+                {/* Avatar */}
                 <div
                   className="mydon-avatar"
                   style={{
@@ -150,6 +96,7 @@ function MyDonations() {
                   {getInitial(donation.project?.ngo?.organizationName)}
                 </div>
 
+                {/* Info */}
                 <div className="mydon-info">
                   <div className="mydon-info-title">
                     {donation.project?.title || "(No project)"}
@@ -159,6 +106,7 @@ function MyDonations() {
                   </div>
                 </div>
 
+                {/* Right */}
                 <div className="mydon-right">
                   <div className="mydon-amount">
                     NPR {donation.amount?.toLocaleString()}

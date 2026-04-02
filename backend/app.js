@@ -21,7 +21,9 @@ const donationRoutes = require("./routes/donationRoutes");
 const updateRoutes = require("./routes/updateRoutes");
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const adminRoutes = require('./routes/admin');
+const paymentRoutes = require("./routes/paymentRoutes");
 
+app.use("/api/payments", paymentRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/ngo", ngoRoutes);
 app.use("/api/projects", projectRoutes);

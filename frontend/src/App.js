@@ -27,34 +27,27 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* PUBLIC */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/about" element={<AboutPage />} />
 
-        {/* DONOR ROUTES */}
         <Route path="/donor-dashboard" element={<DonorDashboard />} />
         <Route path="/browse" element={<BrowseNGO />} />
         <Route path="/my-donations" element={<MyDonations />} />
         <Route path="/badges" element={<Badges />} />
 
-        {/* DONOR PROJECT DETAIL */}
         <Route path="/project/:id" element={<ProjectDetailsPublic />} />
 
-        {/* NGO ROUTES */}
         <Route path="/ngo-dashboard" element={<NGODashboard />} />
         <Route path="/create-project" element={<CreateProject />} />
         <Route path="/ngo-projects" element={<NgoProjects />} />
         <Route path="/settings" element={<NgoSettings />} />
         <Route path="/analytics" element={<Analytics />} />
 
-        {/* NGO PROJECT DETAIL */}
         <Route path="/projects/:id" element={<ProjectDetails />} />
 
-        {/* KHALTI RETURN */}
         <Route path="/khalti-return" element={<KhaltiReturn />} />
 
-        {/* ADMIN ROUTES */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
           <Route path="ngo-verification" element={<AdminNgoVerification />} />

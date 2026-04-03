@@ -4,7 +4,7 @@ const Project = require("../models/Project");
 
 const KHALTI_SECRET_KEY = process.env.KHALTI_SECRET_KEY;
 const KHALTI_BASE_URL =
-  process.env.KHALTI_BASE_URL || "https://khalti.com/api/v2";
+  process.env.KHALTI_BASE_URL || "https://dev.khalti.com/api/v2";
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
 exports.initiateKhaltiPayment = async (req, res) => {
@@ -85,6 +85,7 @@ exports.initiateKhaltiPayment = async (req, res) => {
 
     console.log("KHALTI_SECRET_KEY loaded:", !!KHALTI_SECRET_KEY);
     console.log("KHALTI_BASE_URL:", KHALTI_BASE_URL);
+    console.log("FRONTEND_URL:", FRONTEND_URL);
 
     const response = await axios.post(
       `${KHALTI_BASE_URL}/epayment/initiate/`,
@@ -106,6 +107,7 @@ exports.initiateKhaltiPayment = async (req, res) => {
       payment_url: response.data.payment_url,
       pidx: response.data.pidx,
       donationId: pendingDonation._id,
+      projectId: projectId,
     });
   } catch (error) {
     console.error(
@@ -152,10 +154,16 @@ exports.verifyKhaltiPayment = async (req, res) => {
 
     const result = response.data;
 
+    console.log("VERIFY PIDX:", pidx);
+    console.log("LOOKUP RESULT:", result);
+
     const donation = await Donation.findOne({ khaltiPidx: pidx });
     if (!donation) {
       return res.status(404).json({ message: "Donation record not found" });
     }
+
+    console.log("DONATION FOUND:", donation._id);
+    console.log("PROJECT ID:", donation.project);
 
     if (result.status === "Completed") {
       if (donation.paymentStatus !== "SUCCESS") {
@@ -164,7 +172,15 @@ exports.verifyKhaltiPayment = async (req, res) => {
         await donation.save();
 
         const project = await Project.findById(donation.project);
+
         if (project) {
+          console.log("UPDATING PROJECT:", project._id);
+          console.log("OLD raisedAmount:", project.raisedAmount);
+          console.log(
+            "DONATION AMOUNT:",
+            Number(donation.baseAmount || donation.amount)
+          );
+
           project.raisedAmount =
             Number(project.raisedAmount || 0) +
             Number(donation.baseAmount || donation.amount);
@@ -181,6 +197,9 @@ exports.verifyKhaltiPayment = async (req, res) => {
           }
 
           await project.save();
+
+          console.log("NEW raisedAmount:", project.raisedAmount);
+          console.log("NEW donorCount:", project.donorCount);
         }
       }
     } else if (
@@ -191,7 +210,12 @@ exports.verifyKhaltiPayment = async (req, res) => {
       await donation.save();
     }
 
-    return res.status(200).json(result);
+    return res.status(200).json({
+      ...result,
+      donationId: donation._id,
+      projectId: donation.project,
+      redirectUrl: `/project/${donation.project}`,
+    });
   } catch (error) {
     console.error(
       "KHALTI VERIFY ERROR:",

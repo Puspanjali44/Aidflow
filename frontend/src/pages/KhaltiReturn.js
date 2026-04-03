@@ -1,60 +1,74 @@
-import React, { useEffect, useState } from "react";
-
-const API = "http://localhost:5000/api";
+import { useEffect, useState } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 export default function KhaltiReturn() {
-  const [message, setMessage] = useState("Verifying payment...");
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  const [message, setMessage] = useState("Verifying your payment...");
+  const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const pidx = params.get("pidx");
-    const status = params.get("status");
-
-    if (!pidx) {
-      setMessage("Missing payment reference.");
-      return;
-    }
-
-    const verify = async () => {
+    const verifyPayment = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const pidx = searchParams.get("pidx");
+        const status = searchParams.get("status");
+        const txnId = searchParams.get("txnId");
 
-        if (!token) {
-          setMessage("Login token missing. Please log in again and verify payment.");
+        if (!pidx) {
+          setMessage("❌ Missing payment ID");
           return;
         }
 
-        const res = await fetch(`${API}/payments/khalti/verify`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ pidx }),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.message || "Verification failed");
+        if (status !== "Completed") {
+          setMessage(`❌ Payment ${status || "failed"}`);
+          return;
         }
 
-        if (data.status === "Completed") {
-          setMessage("Payment successful. Donation confirmed.");
-        } else {
-          setMessage(`Payment status: ${data.status || status || "Unknown"}`);
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setMessage("❌ Please log in again");
+          return;
         }
-      } catch (err) {
-        setMessage(err.message || "Verification failed.");
+
+        const res = await axios.post(
+          "http://localhost:5000/api/payments/khalti/verify",
+          { pidx },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        const projectId = res.data?.projectId || searchParams.get("projectId");
+
+        if (!projectId) {
+          setMessage("✅ Payment successful, but project not found.");
+          return;
+        }
+
+        setMessage("✅ Payment verified successfully!");
+        setIsSuccess(true);
+
+        // ✅ ALWAYS redirect to PUBLIC donor view after donation
+        setTimeout(() => {
+          navigate(`/project/${projectId}?payment=success&txnId=${txnId || ""}`, {
+            replace: true,
+          });
+        }, 1400);
+      } catch (error) {
+        console.error(error);
+        setMessage(error.response?.data?.message || "❌ Verification failed");
       }
     };
 
-    verify();
-  }, []);
+    verifyPayment();
+  }, [searchParams, navigate]);
 
   return (
-    <div style={{ padding: "40px", textAlign: "center" }}>
-      <h2>{message}</h2>
+    <div style={{ padding: "100px 20px", textAlign: "center" }}>
+      <h2 style={{ color: isSuccess ? "#16a34a" : "#ef4444" }}>
+        {message}
+      </h2>
+      {isSuccess && <p>Redirecting to project page...</p>}
     </div>
   );
 }

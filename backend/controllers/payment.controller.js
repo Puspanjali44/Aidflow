@@ -4,11 +4,19 @@ const Project = require("../models/Project");
 
 const KHALTI_SECRET_KEY = process.env.KHALTI_SECRET_KEY;
 const KHALTI_BASE_URL =
-  process.env.KHALTI_BASE_URL || "https://dev.khalti.com/api/v2";
+  process.env.KHALTI_BASE_URL || "https://khalti.com/api/v2";
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
 exports.initiateKhaltiPayment = async (req, res) => {
   try {
+    if (!KHALTI_SECRET_KEY) {
+      return res.status(500).json({ message: "Khalti secret key is missing" });
+    }
+
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
     const {
       projectId,
       amount,
@@ -75,6 +83,9 @@ exports.initiateKhaltiPayment = async (req, res) => {
       },
     };
 
+    console.log("KHALTI_SECRET_KEY loaded:", !!KHALTI_SECRET_KEY);
+    console.log("KHALTI_BASE_URL:", KHALTI_BASE_URL);
+
     const response = await axios.post(
       `${KHALTI_BASE_URL}/epayment/initiate/`,
       payload,
@@ -114,6 +125,14 @@ exports.initiateKhaltiPayment = async (req, res) => {
 
 exports.verifyKhaltiPayment = async (req, res) => {
   try {
+    if (!KHALTI_SECRET_KEY) {
+      return res.status(500).json({ message: "Khalti secret key is missing" });
+    }
+
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
     const { pidx } = req.body;
 
     if (!pidx) {
@@ -172,7 +191,7 @@ exports.verifyKhaltiPayment = async (req, res) => {
       await donation.save();
     }
 
-    return res.json(result);
+    return res.status(200).json(result);
   } catch (error) {
     console.error(
       "KHALTI VERIFY ERROR:",

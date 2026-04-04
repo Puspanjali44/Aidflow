@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import "./DonateModal.css";
 
 const BASE = "http://localhost:5000";
@@ -35,6 +35,7 @@ export default function DonateModal({ project, onClose }) {
 
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [uiMessage, setUiMessage] = useState("");
 
   const goalAmount = Number(project?.goalAmount || 0);
   const raisedAmount = Number(project?.raisedAmount || 0);
@@ -46,22 +47,29 @@ export default function DonateModal({ project, onClose }) {
   const baseAmount =
     remainingAmount > 0 ? clamp(enteredAmount || 0, 0, remainingAmount) : 0;
 
-  const platformFee = coverFee
-    ? parseFloat((baseAmount * PLATFORM_FEE_RATE).toFixed(2))
-    : 0;
+  const platformFee = useMemo(() => {
+    return coverFee
+      ? parseFloat((baseAmount * PLATFORM_FEE_RATE).toFixed(2))
+      : 0;
+  }, [baseAmount, coverFee]);
 
-  const totalAmount = parseFloat((baseAmount + platformFee).toFixed(2));
+  const totalAmount = useMemo(() => {
+    return parseFloat((baseAmount + platformFee).toFixed(2));
+  }, [baseAmount, platformFee]);
 
   const projectFull = remainingAmount <= 0;
   const exceedsRemaining = enteredAmount > remainingAmount;
 
   const validateDetails = () => {
     const e = {};
+
     if (!form.firstName.trim()) e.firstName = "Required";
     if (!form.lastName.trim()) e.lastName = "Required";
+
     if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) {
       e.email = "Valid email required";
     }
+
     if (!form.address.trim()) e.address = "Required";
 
     setErrors(e);
@@ -69,18 +77,20 @@ export default function DonateModal({ project, onClose }) {
   };
 
   const handleContinueToDetails = () => {
+    setUiMessage("");
+
     if (projectFull) {
-      alert("This project has already reached its goal.");
+      setUiMessage("This project has already reached its goal.");
       return;
     }
 
     if (!enteredAmount || enteredAmount <= 0) {
-      alert("Please enter a valid donation amount.");
+      setUiMessage("Please enter a valid donation amount.");
       return;
     }
 
     if (exceedsRemaining) {
-      alert(
+      setUiMessage(
         `You can donate up to ${formatNPR(remainingAmount)} only for this project.`
       );
       return;
@@ -90,7 +100,7 @@ export default function DonateModal({ project, onClose }) {
   };
 
   const getPayload = () => ({
-    projectId: project._id,
+    projectId: project?._id,
     amount: totalAmount,
     baseAmount,
     platformFee,
@@ -98,31 +108,46 @@ export default function DonateModal({ project, onClose }) {
     donationType,
     donorName: form.anonymous
       ? "Anonymous"
-      : `${form.firstName} ${form.lastName}`,
-    receiptName: form.receiptName || `${form.firstName} ${form.lastName}`,
-    email: form.email,
-    message: form.message,
+      : `${form.firstName} ${form.lastName}`.trim(),
+    receiptName:
+      form.receiptName.trim() || `${form.firstName} ${form.lastName}`.trim(),
+    email: form.email.trim(),
+    message: form.message.trim(),
     anonymous: form.anonymous,
-    address: form.address,
-    city: form.city,
+    address: form.address.trim(),
+    city: form.city.trim(),
     country: form.country,
   });
 
   const handleDonate = async () => {
+    setUiMessage("");
+
     if (projectFull) {
-      alert("This project has already reached its goal.");
+      setUiMessage("This project has already reached its goal.");
       return;
     }
 
     if (!baseAmount || baseAmount <= 0) {
-      alert("Invalid donation amount.");
+      setUiMessage("Invalid donation amount.");
       return;
     }
 
     if (baseAmount > remainingAmount) {
-      alert(
+      setUiMessage(
         `You can donate up to ${formatNPR(remainingAmount)} only for this project.`
       );
+      return;
+    }
+
+    if (donationType === "monthly") {
+      setUiMessage(
+        "Monthly recurring donation is coming soon. Please use one-time donation for now."
+      );
+      return;
+    }
+
+    if (paymentMethod !== "khalti") {
+      setUiMessage("Please use Khalti for now.");
       return;
     }
 
@@ -132,38 +157,28 @@ export default function DonateModal({ project, onClose }) {
       const token = localStorage.getItem("token");
       const payload = getPayload();
 
-      if (paymentMethod === "khalti") {
-        const r = await fetch(`${API}/payments/khalti/initiate`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify(payload),
-        });
+      const r = await fetch(`${API}/payments/khalti/initiate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
 
-        const data = await r.json();
+      const data = await r.json();
 
-        if (!r.ok) {
-          throw new Error(data.message || "Failed to initiate Khalti payment");
-        }
-
-        if (!data.payment_url) {
-          throw new Error("Khalti payment URL not received");
-        }
-
-        window.location.href = data.payment_url;
-        return;
+      if (!r.ok) {
+        throw new Error(data?.message || "Failed to initiate Khalti payment");
       }
 
-      if (paymentMethod === "esewa") {
-        alert("eSewa integration not connected yet. Please use Khalti.");
-        return;
+      if (!data?.payment_url) {
+        throw new Error("Khalti payment URL not received");
       }
 
-      alert("Please use Khalti for now.");
+      window.location.href = data.payment_url;
     } catch (e) {
-      alert(e.message || "Something went wrong. Please try again.");
+      setUiMessage(e.message || "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -180,17 +195,12 @@ export default function DonateModal({ project, onClose }) {
             <div className="dm-success-icon">💜</div>
             <h2>Thank you!</h2>
             <p>
-              Your{" "}
-              <strong>
-                {donationType === "monthly" ? "monthly" : "one-time"}
-              </strong>{" "}
-              donation of <strong>{formatNPR(totalAmount)}</strong> to{" "}
-              <strong>{project.title}</strong> was received.
+              Your <strong>one-time</strong> donation of{" "}
+              <strong>{formatNPR(totalAmount)}</strong> to{" "}
+              <strong>{project?.title}</strong> was received.
             </p>
             <p className="dm-success-sub">
-              {donationType === "monthly"
-                ? `Your next monthly donation will be processed automatically. Receipt sent to ${form.email}.`
-                : `A receipt will be sent to ${form.email}.`}
+              A receipt will be sent to {form.email}.
             </p>
             <button className="dm-btn-primary dm-full" onClick={onClose}>
               Close
@@ -203,6 +213,7 @@ export default function DonateModal({ project, onClose }) {
             <div className="dm-header">
               {step !== "amount" && (
                 <button
+                  type="button"
                   className="dm-back"
                   onClick={() =>
                     setStep(step === "confirm" ? "details" : "amount")
@@ -212,7 +223,7 @@ export default function DonateModal({ project, onClose }) {
                 </button>
               )}
 
-              <button className="dm-close" onClick={onClose}>
+              <button type="button" className="dm-close" onClick={onClose}>
                 ✕
               </button>
 
@@ -238,22 +249,42 @@ export default function DonateModal({ project, onClose }) {
               </div>
             </div>
 
+            {uiMessage && (
+              <div
+                className="dm-limit-note"
+                style={{ margin: "12px 24px 0 24px" }}
+              >
+                {uiMessage}
+              </div>
+            )}
+
             {step === "amount" && (
               <div className="dm-body">
                 <div className="dm-toggle">
                   <button
+                    type="button"
                     className={`dm-toggle-btn ${
                       donationType === "one-time" ? "active" : ""
                     }`}
-                    onClick={() => setDonationType("one-time")}
+                    onClick={() => {
+                      setDonationType("one-time");
+                      setUiMessage("");
+                    }}
                   >
                     One-time
                   </button>
+
                   <button
+                    type="button"
                     className={`dm-toggle-btn ${
                       donationType === "monthly" ? "active" : ""
                     }`}
-                    onClick={() => setDonationType("monthly")}
+                    onClick={() => {
+                      setDonationType("monthly");
+                      setUiMessage(
+                        "Monthly recurring donation is coming soon. Please use one-time donation for now."
+                      );
+                    }}
                   >
                     Monthly
                   </button>
@@ -275,6 +306,7 @@ export default function DonateModal({ project, onClose }) {
                           if (disabled) return;
                           setSelectedAmt(amt);
                           setCustomAmt("");
+                          setUiMessage("");
                         }}
                       >
                         {formatNPR(amt)}
@@ -300,6 +332,7 @@ export default function DonateModal({ project, onClose }) {
                     onChange={(e) => {
                       setCustomAmt(e.target.value);
                       setSelectedAmt(null);
+                      setUiMessage("");
                     }}
                   />
                 </div>
@@ -319,7 +352,8 @@ export default function DonateModal({ project, onClose }) {
 
                 {donationType === "monthly" && !projectFull && (
                   <div className="dm-limit-note">
-                    Monthly donations will repeat every month until cancelled.
+                    Monthly recurring donation is not active yet. If you continue
+                    now, it will be blocked until backend recurring logic is built.
                   </div>
                 )}
 
@@ -378,6 +412,7 @@ export default function DonateModal({ project, onClose }) {
                 </div>
 
                 <button
+                  type="button"
                   className="dm-btn-primary dm-full dm-mt16"
                   disabled={
                     projectFull ||
@@ -531,12 +566,15 @@ export default function DonateModal({ project, onClose }) {
                       "Japan",
                       "Other",
                     ].map((c) => (
-                      <option key={c}>{c}</option>
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
                     ))}
                   </select>
                 </div>
 
                 <button
+                  type="button"
                   className="dm-btn-primary dm-full dm-mt16"
                   onClick={() => {
                     if (validateDetails()) setStep("confirm");
@@ -554,7 +592,7 @@ export default function DonateModal({ project, onClose }) {
                 <div className="dm-summary-card">
                   <div className="dm-summary-row">
                     <span>Project</span>
-                    <strong>{project.title}</strong>
+                    <strong>{project?.title}</strong>
                   </div>
 
                   <div className="dm-summary-row">
@@ -608,6 +646,7 @@ export default function DonateModal({ project, onClose }) {
                   <div className="dm-breakdown-fee">
                     + {formatNPR(platformFee)} Cover Platform Costs
                     <button
+                      type="button"
                       className="dm-fee-toggle"
                       onClick={() => setCoverFee((f) => !f)}
                     >
@@ -622,7 +661,8 @@ export default function DonateModal({ project, onClose }) {
 
                   {donationType === "monthly" && (
                     <div className="dm-breakdown-hint">
-                      🔁 This donation will repeat every month until cancelled.
+                      🔁 Monthly recurring donation is coming soon and is not
+                      active yet.
                     </div>
                   )}
                 </div>
@@ -637,6 +677,7 @@ export default function DonateModal({ project, onClose }) {
                 </div>
 
                 <button
+                  type="button"
                   className="dm-btn-donate dm-full"
                   disabled={submitting || projectFull || baseAmount <= 0}
                   onClick={handleDonate}

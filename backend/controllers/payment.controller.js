@@ -1,6 +1,7 @@
 const axios = require("axios");
 const Donation = require("../models/Donation");
 const Project = require("../models/Project");
+const RecurringDonation = require("../models/RecurringDonation");
 
 const KHALTI_SECRET_KEY = process.env.KHALTI_SECRET_KEY;
 const KHALTI_BASE_URL =
@@ -38,6 +39,8 @@ exports.initiateKhaltiPayment = async (req, res) => {
     }
 
     const numericAmount = Number(amount);
+    const numericBaseAmount = Number(baseAmount || amount);
+    const numericPlatformFee = Number(platformFee || 0);
 
     if (Number.isNaN(numericAmount) || numericAmount <= 0) {
       return res.status(400).json({ message: "Invalid donation amount" });
@@ -48,15 +51,43 @@ exports.initiateKhaltiPayment = async (req, res) => {
       return res.status(400).json({ message: "Project not available" });
     }
 
+    let recurringDonationId = null;
+
+    if (donationType === "monthly") {
+      const recurringDonation = await RecurringDonation.create({
+        donor: req.user._id,
+        project: projectId,
+        amount: numericAmount,
+        baseAmount: numericBaseAmount,
+        platformFee: numericPlatformFee,
+        currency: "NPR",
+        interval: "monthly",
+        donorName: donorName || "",
+        receiptName: receiptName || "",
+        email: email || "",
+        message: message || "",
+        anonymous: !!anonymous,
+        address: address || "",
+        city: city || "",
+        country: country || "Nepal",
+        paymentMethod: "khalti",
+        status: "PENDING",
+        paymentStatus: "PENDING",
+      });
+
+      recurringDonationId = recurringDonation._id;
+    }
+
     const purchaseOrderId = `AIDFLOW-${Date.now()}-${projectId}`;
     const totalAmountPaisa = Math.round(numericAmount * 100);
 
     const pendingDonation = await Donation.create({
       donor: req.user._id,
       project: projectId,
+      recurringDonation: recurringDonationId,
       amount: numericAmount,
-      baseAmount: Number(baseAmount || amount),
-      platformFee: Number(platformFee || 0),
+      baseAmount: numericBaseAmount,
+      platformFee: numericPlatformFee,
       donationType: donationType || "one-time",
       donorName: donorName || "",
       receiptName: receiptName || "",
@@ -65,7 +96,7 @@ exports.initiateKhaltiPayment = async (req, res) => {
       anonymous: !!anonymous,
       address: address || "",
       city: city || "",
-      country: country || "",
+      country: country || "Nepal",
       paymentStatus: "PENDING",
       khaltiPurchaseOrderId: purchaseOrderId,
     });
@@ -83,10 +114,6 @@ exports.initiateKhaltiPayment = async (req, res) => {
       },
     };
 
-    console.log("KHALTI_SECRET_KEY loaded:", !!KHALTI_SECRET_KEY);
-    console.log("KHALTI_BASE_URL:", KHALTI_BASE_URL);
-    console.log("FRONTEND_URL:", FRONTEND_URL);
-
     const response = await axios.post(
       `${KHALTI_BASE_URL}/epayment/initiate/`,
       payload,
@@ -101,13 +128,21 @@ exports.initiateKhaltiPayment = async (req, res) => {
     await Donation.findByIdAndUpdate(pendingDonation._id, {
       khaltiPidx: response.data.pidx,
       khaltiPaymentUrl: response.data.payment_url,
+      providerReference: response.data.pidx,
     });
+
+    if (recurringDonationId) {
+      await RecurringDonation.findByIdAndUpdate(recurringDonationId, {
+        providerReference: response.data.pidx,
+      });
+    }
 
     return res.status(200).json({
       payment_url: response.data.payment_url,
       pidx: response.data.pidx,
       donationId: pendingDonation._id,
-      projectId: projectId,
+      recurringDonationId,
+      projectId,
     });
   } catch (error) {
     console.error(
@@ -135,52 +170,73 @@ exports.verifyKhaltiPayment = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const { pidx } = req.body;
+    const { pidx, donationId, status, transactionId } = req.body;
 
-    if (!pidx) {
-      return res.status(400).json({ message: "pidx required" });
+    let donation = null;
+    let result = null;
+
+    if (pidx) {
+      const response = await axios.post(
+        `${KHALTI_BASE_URL}/epayment/lookup/`,
+        { pidx },
+        {
+          headers: {
+            Authorization: `Key ${KHALTI_SECRET_KEY}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      result = response.data;
+      donation = await Donation.findOne({ khaltiPidx: pidx });
+    } else if (donationId) {
+      donation = await Donation.findById(donationId);
+
+      result = {
+        status: status || "FAILED",
+        transaction_id: transactionId || "",
+        pidx: donation?.khaltiPidx || "",
+      };
+    } else {
+      return res.status(400).json({ message: "pidx or donationId required" });
     }
 
-    const response = await axios.post(
-      `${KHALTI_BASE_URL}/epayment/lookup/`,
-      { pidx },
-      {
-        headers: {
-          Authorization: `Key ${KHALTI_SECRET_KEY}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    const result = response.data;
-
-    console.log("VERIFY PIDX:", pidx);
-    console.log("LOOKUP RESULT:", result);
-
-    const donation = await Donation.findOne({ khaltiPidx: pidx });
     if (!donation) {
       return res.status(404).json({ message: "Donation record not found" });
     }
 
-    console.log("DONATION FOUND:", donation._id);
-    console.log("PROJECT ID:", donation.project);
+    const isSuccess = result.status === "Completed" || result.status === "SUCCESS";
+    const isFailed =
+      result.status === "Expired" ||
+      result.status === "User canceled" ||
+      result.status === "FAILED";
 
-    if (result.status === "Completed") {
+    if (isSuccess) {
       if (donation.paymentStatus !== "SUCCESS") {
         donation.paymentStatus = "SUCCESS";
         donation.khaltiTransactionId = result.transaction_id || "";
+        donation.providerReference =
+          result.pidx || result.transaction_id || donation.providerReference;
+        donation.paidAt = new Date();
         await donation.save();
+
+        if (donation.recurringDonation) {
+          const nextDate = new Date();
+          nextDate.setMonth(nextDate.getMonth() + 1);
+
+          await RecurringDonation.findByIdAndUpdate(donation.recurringDonation, {
+            status: "ACTIVE",
+            paymentStatus: "SUCCESS",
+            providerReference: result.pidx || result.transaction_id || "",
+            lastDonation: donation._id,
+            lastChargedAt: new Date(),
+            nextBillingDate: nextDate,
+          });
+        }
 
         const project = await Project.findById(donation.project);
 
         if (project) {
-          console.log("UPDATING PROJECT:", project._id);
-          console.log("OLD raisedAmount:", project.raisedAmount);
-          console.log(
-            "DONATION AMOUNT:",
-            Number(donation.baseAmount || donation.amount)
-          );
-
           project.raisedAmount =
             Number(project.raisedAmount || 0) +
             Number(donation.baseAmount || donation.amount);
@@ -197,17 +253,21 @@ exports.verifyKhaltiPayment = async (req, res) => {
           }
 
           await project.save();
-
-          console.log("NEW raisedAmount:", project.raisedAmount);
-          console.log("NEW donorCount:", project.donorCount);
         }
       }
-    } else if (
-      result.status === "Expired" ||
-      result.status === "User canceled"
-    ) {
+    } else if (isFailed) {
       donation.paymentStatus = "FAILED";
+      donation.providerReference =
+        result.pidx || result.transaction_id || donation.providerReference;
       await donation.save();
+
+      if (donation.recurringDonation) {
+        await RecurringDonation.findByIdAndUpdate(donation.recurringDonation, {
+          status: "FAILED",
+          paymentStatus: "FAILED",
+          providerReference: result.pidx || result.transaction_id || "",
+        });
+      }
     }
 
     return res.status(200).json({
@@ -229,5 +289,125 @@ exports.verifyKhaltiPayment = async (req, res) => {
         "Failed to verify Khalti payment",
       error: error.response?.data || error.message,
     });
+  }
+};
+
+exports.mockKhaltiPage = async (req, res) => {
+  try {
+    const { donationId } = req.params;
+
+    return res.send(`
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>Mock Khalti Payment</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              padding: 40px;
+              text-align: center;
+              background: #f8f9fb;
+            }
+            .card {
+              max-width: 500px;
+              margin: 40px auto;
+              background: white;
+              border-radius: 12px;
+              padding: 32px;
+              box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            }
+            h2 {
+              margin-bottom: 12px;
+            }
+            p {
+              color: #444;
+              margin-bottom: 24px;
+              word-break: break-word;
+            }
+            button {
+              padding: 12px 20px;
+              margin: 10px;
+              border: none;
+              border-radius: 8px;
+              cursor: pointer;
+              font-size: 16px;
+            }
+            .success {
+              background: #4caf50;
+              color: white;
+            }
+            .fail {
+              background: #f44336;
+              color: white;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <h2>Mock Khalti Payment Page</h2>
+            <p>Donation ID: ${donationId}</p>
+
+            <button class="success" onclick="paySuccess()">Pay Success</button>
+            <button class="fail" onclick="payFail()">Pay Failed</button>
+          </div>
+
+          <script>
+            async function paySuccess() {
+              try {
+                const token = localStorage.getItem("token");
+
+                const res = await fetch("/api/payments/khalti/verify", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { "Authorization": "Bearer " + token } : {})
+                  },
+                  body: JSON.stringify({
+                    donationId: "${donationId}",
+                    status: "SUCCESS",
+                    transactionId: "mock_txn_" + Date.now()
+                  })
+                });
+
+                const data = await res.json();
+                alert(data.message || "Payment successful");
+                window.location.href = "http://localhost:3000/donation-success";
+              } catch (error) {
+                alert("Failed to verify mock successful payment");
+              }
+            }
+
+            async function payFail() {
+              try {
+                const token = localStorage.getItem("token");
+
+                const res = await fetch("/api/payments/khalti/verify", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { "Authorization": "Bearer " + token } : {})
+                  },
+                  body: JSON.stringify({
+                    donationId: "${donationId}",
+                    status: "FAILED",
+                    transactionId: "mock_fail_" + Date.now()
+                  })
+                });
+
+                const data = await res.json();
+                alert(data.message || "Payment failed");
+                window.location.href = "http://localhost:3000/donation-failed";
+              } catch (error) {
+                alert("Failed to verify mock failed payment");
+              }
+            }
+          </script>
+        </body>
+      </html>
+    `);
+  } catch (error) {
+    return res.status(500).send("Failed to load mock Khalti page");
   }
 };

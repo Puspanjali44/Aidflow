@@ -30,17 +30,38 @@ const recurringDonationSchema = new mongoose.Schema(
       default: "NPR",
     },
 
-    donorName: String,
-    receiptName: String,
-    email: String,
-    message: String,
+    donorName: {
+      type: String,
+      default: "",
+    },
+    receiptName: {
+      type: String,
+      default: "",
+    },
+    email: {
+      type: String,
+      default: "",
+    },
+    message: {
+      type: String,
+      default: "",
+    },
     anonymous: {
       type: Boolean,
       default: false,
     },
-    address: String,
-    city: String,
-    country: String,
+    address: {
+      type: String,
+      default: "",
+    },
+    city: {
+      type: String,
+      default: "",
+    },
+    country: {
+      type: String,
+      default: "Nepal",
+    },
 
     interval: {
       type: String,
@@ -75,15 +96,19 @@ const recurringDonationSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
-    nextBillingDate: {
-      type: Date,
-      default: null,
-    },
     lastChargedAt: {
       type: Date,
       default: null,
     },
+    nextBillingDate: {
+      type: Date,
+      default: null,
+    },
     cancelledAt: {
+      type: Date,
+      default: null,
+    },
+    pausedAt: {
       type: Date,
       default: null,
     },

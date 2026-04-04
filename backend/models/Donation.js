@@ -14,6 +14,12 @@ const donationSchema = new mongoose.Schema(
       required: true,
     },
 
+    recurringDonation: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "RecurringDonation",
+      default: null,
+    },
+
     amount: {
       type: Number,
       required: true,
@@ -21,6 +27,7 @@ const donationSchema = new mongoose.Schema(
 
     baseAmount: {
       type: Number,
+      default: 0,
     },
 
     platformFee: {
@@ -36,18 +43,22 @@ const donationSchema = new mongoose.Schema(
 
     donorName: {
       type: String,
+      default: "",
     },
 
     receiptName: {
       type: String,
+      default: "",
     },
 
     email: {
       type: String,
+      default: "",
     },
 
     message: {
       type: String,
+      default: "",
     },
 
     anonymous: {
@@ -57,20 +68,28 @@ const donationSchema = new mongoose.Schema(
 
     address: {
       type: String,
+      default: "",
     },
 
     city: {
       type: String,
+      default: "",
     },
 
     country: {
       type: String,
+      default: "Nepal",
     },
 
     paymentStatus: {
       type: String,
       enum: ["PENDING", "SUCCESS", "FAILED"],
       default: "PENDING",
+    },
+
+    providerReference: {
+      type: String,
+      default: null,
     },
 
     khaltiPidx: {
@@ -93,36 +112,8 @@ const donationSchema = new mongoose.Schema(
       default: "",
     },
 
-    isRecurring: {
-      type: Boolean,
-      default: false,
-    },
-
-    frequency: {
-      type: String,
-      enum: ["monthly", null],
-      default: null,
-    },
-
-    recurringStatus: {
-      type: String,
-      enum: ["active", "cancelled", null],
-      default: null,
-    },
-
-    nextChargeDate: {
+    paidAt: {
       type: Date,
-      default: null,
-    },
-
-    lastChargedAt: {
-      type: Date,
-      default: null,
-    },
-
-    parentDonation: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Donation",
       default: null,
     },
   },

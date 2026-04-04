@@ -4,6 +4,7 @@ const router = express.Router();
 const {
   initiateKhaltiPayment,
   verifyKhaltiPayment,
+  mockKhaltiPage,
 } = require("../controllers/payment.controller");
 
 const { protect } = require("../middleware/authMiddleware");
@@ -22,5 +23,7 @@ router.post(
   authorizeRoles("donor"),
   verifyKhaltiPayment
 );
+
+router.get("/khalti/mock/:donationId", mockKhaltiPage);
 
 module.exports = router;

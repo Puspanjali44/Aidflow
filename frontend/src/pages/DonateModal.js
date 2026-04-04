@@ -139,13 +139,6 @@ export default function DonateModal({ project, onClose }) {
       return;
     }
 
-    if (donationType === "monthly") {
-      setUiMessage(
-        "Monthly recurring donation is coming soon. Please use one-time donation for now."
-      );
-      return;
-    }
-
     if (paymentMethod !== "khalti") {
       setUiMessage("Please use Khalti for now.");
       return;
@@ -157,7 +150,12 @@ export default function DonateModal({ project, onClose }) {
       const token = localStorage.getItem("token");
       const payload = getPayload();
 
-      const r = await fetch(`${API}/payments/khalti/initiate`, {
+      const endpoint =
+        donationType === "monthly"
+          ? `${API}/recurring-donations/initiate`
+          : `${API}/payments/khalti/initiate`;
+
+      const r = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -169,11 +167,11 @@ export default function DonateModal({ project, onClose }) {
       const data = await r.json();
 
       if (!r.ok) {
-        throw new Error(data?.message || "Failed to initiate Khalti payment");
+        throw new Error(data?.message || "Failed to initiate payment");
       }
 
       if (!data?.payment_url) {
-        throw new Error("Khalti payment URL not received");
+        throw new Error("Payment URL not received");
       }
 
       window.location.href = data.payment_url;
@@ -195,12 +193,17 @@ export default function DonateModal({ project, onClose }) {
             <div className="dm-success-icon">💜</div>
             <h2>Thank you!</h2>
             <p>
-              Your <strong>one-time</strong> donation of{" "}
-              <strong>{formatNPR(totalAmount)}</strong> to{" "}
+              Your{" "}
+              <strong>
+                {donationType === "monthly" ? "monthly" : "one-time"}
+              </strong>{" "}
+              donation of <strong>{formatNPR(totalAmount)}</strong> to{" "}
               <strong>{project?.title}</strong> was received.
             </p>
             <p className="dm-success-sub">
-              A receipt will be sent to {form.email}.
+              {donationType === "monthly"
+                ? `Your monthly donation has been started. Receipt sent to ${form.email}.`
+                : `A receipt will be sent to ${form.email}.`}
             </p>
             <button className="dm-btn-primary dm-full" onClick={onClose}>
               Close
@@ -281,9 +284,7 @@ export default function DonateModal({ project, onClose }) {
                     }`}
                     onClick={() => {
                       setDonationType("monthly");
-                      setUiMessage(
-                        "Monthly recurring donation is coming soon. Please use one-time donation for now."
-                      );
+                      setUiMessage("");
                     }}
                   >
                     Monthly
@@ -352,8 +353,7 @@ export default function DonateModal({ project, onClose }) {
 
                 {donationType === "monthly" && !projectFull && (
                   <div className="dm-limit-note">
-                    Monthly recurring donation is not active yet. If you continue
-                    now, it will be blocked until backend recurring logic is built.
+                    Monthly donations repeat every month until cancelled.
                   </div>
                 )}
 
@@ -661,8 +661,7 @@ export default function DonateModal({ project, onClose }) {
 
                   {donationType === "monthly" && (
                     <div className="dm-breakdown-hint">
-                      🔁 Monthly recurring donation is coming soon and is not
-                      active yet.
+                      🔁 Monthly donations repeat every month until cancelled.
                     </div>
                   )}
                 </div>

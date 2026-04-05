@@ -42,7 +42,12 @@ exports.initiateKhaltiPayment = async (req, res) => {
     const numericBaseAmount = Number(baseAmount || amount);
     const numericPlatformFee = Number(platformFee || 0);
 
-    if (Number.isNaN(numericAmount) || numericAmount <= 0) {
+    if (
+      Number.isNaN(numericAmount) ||
+      Number.isNaN(numericBaseAmount) ||
+      numericAmount <= 0 ||
+      numericBaseAmount <= 0
+    ) {
       return res.status(400).json({ message: "Invalid donation amount" });
     }
 
@@ -70,7 +75,7 @@ exports.initiateKhaltiPayment = async (req, res) => {
         address: address || "",
         city: city || "",
         country: country || "Nepal",
-        paymentMethod: "khalti",
+        provider: "khalti",
         status: "PENDING",
         paymentStatus: "PENDING",
       });
@@ -106,7 +111,10 @@ exports.initiateKhaltiPayment = async (req, res) => {
       website_url: FRONTEND_URL,
       amount: totalAmountPaisa,
       purchase_order_id: purchaseOrderId,
-      purchase_order_name: project.title,
+      purchase_order_name:
+        donationType === "monthly"
+          ? `${project.title} Monthly Donation`
+          : project.title,
       customer_info: {
         name: donorName || "Donor",
         email: email || "donor@example.com",
@@ -166,10 +174,6 @@ exports.verifyKhaltiPayment = async (req, res) => {
       return res.status(500).json({ message: "Khalti secret key is missing" });
     }
 
-    if (!req.user || !req.user._id) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
     const { pidx, donationId, status, transactionId } = req.body;
 
     let donation = null;
@@ -205,7 +209,8 @@ exports.verifyKhaltiPayment = async (req, res) => {
       return res.status(404).json({ message: "Donation record not found" });
     }
 
-    const isSuccess = result.status === "Completed" || result.status === "SUCCESS";
+    const isSuccess =
+      result.status === "Completed" || result.status === "SUCCESS";
     const isFailed =
       result.status === "Expired" ||
       result.status === "User canceled" ||
@@ -221,7 +226,8 @@ exports.verifyKhaltiPayment = async (req, res) => {
         await donation.save();
 
         if (donation.recurringDonation) {
-          const nextDate = new Date();
+          const now = new Date();
+          const nextDate = new Date(now);
           nextDate.setMonth(nextDate.getMonth() + 1);
 
           await RecurringDonation.findByIdAndUpdate(donation.recurringDonation, {
@@ -229,7 +235,7 @@ exports.verifyKhaltiPayment = async (req, res) => {
             paymentStatus: "SUCCESS",
             providerReference: result.pidx || result.transaction_id || "",
             lastDonation: donation._id,
-            lastChargedAt: new Date(),
+            lastChargedAt: now,
             nextBillingDate: nextDate,
           });
         }
@@ -356,13 +362,10 @@ exports.mockKhaltiPage = async (req, res) => {
           <script>
             async function paySuccess() {
               try {
-                const token = localStorage.getItem("token");
-
                 const res = await fetch("/api/payments/khalti/verify", {
                   method: "POST",
                   headers: {
-                    "Content-Type": "application/json",
-                    ...(token ? { "Authorization": "Bearer " + token } : {})
+                    "Content-Type": "application/json"
                   },
                   body: JSON.stringify({
                     donationId: "${donationId}",
@@ -373,7 +376,7 @@ exports.mockKhaltiPage = async (req, res) => {
 
                 const data = await res.json();
                 alert(data.message || "Payment successful");
-                window.location.href = "http://localhost:3000/donation-success";
+                window.location.href = "http://localhost:3000/project";
               } catch (error) {
                 alert("Failed to verify mock successful payment");
               }
@@ -381,13 +384,10 @@ exports.mockKhaltiPage = async (req, res) => {
 
             async function payFail() {
               try {
-                const token = localStorage.getItem("token");
-
                 const res = await fetch("/api/payments/khalti/verify", {
                   method: "POST",
                   headers: {
-                    "Content-Type": "application/json",
-                    ...(token ? { "Authorization": "Bearer " + token } : {})
+                    "Content-Type": "application/json"
                   },
                   body: JSON.stringify({
                     donationId: "${donationId}",
@@ -398,7 +398,7 @@ exports.mockKhaltiPage = async (req, res) => {
 
                 const data = await res.json();
                 alert(data.message || "Payment failed");
-                window.location.href = "http://localhost:3000/donation-failed";
+                window.location.href = "http://localhost:3000/project";
               } catch (error) {
                 alert("Failed to verify mock failed payment");
               }

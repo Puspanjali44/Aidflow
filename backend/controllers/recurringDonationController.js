@@ -74,7 +74,7 @@ exports.initiateRecurringDonation = async (req, res) => {
       interval: "monthly",
       status: "PENDING",
       paymentStatus: "PENDING",
-      paymentMethod: "khalti",
+      provider: "khalti",
     });
 
     const purchaseOrderId = `AIDFLOW-REC-${Date.now()}-${projectId}`;
@@ -87,7 +87,6 @@ exports.initiateRecurringDonation = async (req, res) => {
       amount: numericAmount,
       baseAmount: numericBaseAmount,
       platformFee: numericPlatformFee,
-      currency: currency || "NPR",
       donationType: "monthly",
       donorName: donorName || "",
       receiptName: receiptName || "",
@@ -97,7 +96,6 @@ exports.initiateRecurringDonation = async (req, res) => {
       address: address || "",
       city: city || "",
       country: country || "Nepal",
-      paymentMethod: "khalti",
       paymentStatus: "PENDING",
       khaltiPurchaseOrderId: purchaseOrderId,
     });
@@ -167,11 +165,13 @@ exports.getMyRecurringDonations = async (req, res) => {
       donor: req.user._id,
     })
       .populate("project", "title goalAmount raisedAmount image")
+      .populate("lastDonation")
       .sort({ createdAt: -1 });
 
     res.status(200).json(subscriptions);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("GET MY RECURRING DONATIONS ERROR:", error);
+    res.status(500).json({ message: error.message || "Server error" });
   }
 };
 
@@ -187,8 +187,14 @@ exports.cancelRecurringDonation = async (req, res) => {
       return res.status(403).json({ message: "Not authorized" });
     }
 
+    if (recurring.status === "CANCELLED") {
+      return res.status(400).json({ message: "Subscription already cancelled" });
+    }
+
     recurring.status = "CANCELLED";
     recurring.cancelledAt = new Date();
+    recurring.nextBillingDate = null;
+
     await recurring.save();
 
     res.status(200).json({
@@ -196,7 +202,8 @@ exports.cancelRecurringDonation = async (req, res) => {
       recurring,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("CANCEL RECURRING DONATION ERROR:", error);
+    res.status(500).json({ message: error.message || "Server error" });
   }
 };
 
@@ -212,8 +219,15 @@ exports.pauseRecurringDonation = async (req, res) => {
       return res.status(403).json({ message: "Not authorized" });
     }
 
+    if (recurring.status === "CANCELLED") {
+      return res.status(400).json({
+        message: "Cancelled subscription cannot be paused",
+      });
+    }
+
     recurring.status = "PAUSED";
     recurring.pausedAt = new Date();
+
     await recurring.save();
 
     res.status(200).json({
@@ -221,6 +235,7 @@ exports.pauseRecurringDonation = async (req, res) => {
       recurring,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("PAUSE RECURRING DONATION ERROR:", error);
+    res.status(500).json({ message: error.message || "Server error" });
   }
 };

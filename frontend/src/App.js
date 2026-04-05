@@ -20,8 +20,9 @@ import ProjectDetails from "./pages/ProjectDetails";
 import ProjectDetailsPublic from "./pages/ProjectDetailsPublic";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import AdminSettings from "./pages/AdminSettings";
-import "./pages/Admin.css";
 import KhaltiReturn from "./pages/KhaltiReturn";
+import MySubscriptions from "./pages/MySubscriptions";
+import "./pages/Admin.css";
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
         <Route path="/donor-dashboard" element={<DonorDashboard />} />
         <Route path="/browse" element={<BrowseNGO />} />
         <Route path="/my-donations" element={<MyDonations />} />
+        <Route path="/my-subscriptions" element={<MySubscriptions />} />
         <Route path="/badges" element={<Badges />} />
 
         <Route path="/project/:id" element={<ProjectDetailsPublic />} />

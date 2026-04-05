@@ -18,8 +18,25 @@ router.post(
   initiateRecurringDonation
 );
 
-router.get("/my", protect, authorizeRoles("donor"), getMyRecurringDonations);
-router.patch("/:id/cancel", protect, authorizeRoles("donor"), cancelRecurringDonation);
-router.patch("/:id/pause", protect, authorizeRoles("donor"), pauseRecurringDonation);
+router.get(
+  "/my",
+  protect,
+  authorizeRoles("donor"),
+  getMyRecurringDonations
+);
+
+router.patch(
+  "/:id/cancel",
+  protect,
+  authorizeRoles("donor"),
+  cancelRecurringDonation
+);
+
+router.patch(
+  "/:id/pause",
+  protect,
+  authorizeRoles("donor"),
+  pauseRecurringDonation
+);
 
 module.exports = router;

@@ -13,10 +13,11 @@ function DonorSidebar() {
   };
 
   const navItems = [
-    { path: "/donor-dashboard", label: "Dashboard"},
+    { path: "/donor-dashboard", label: "Dashboard" },
     { path: "/browse", label: "Browse NGOs" },
     { path: "/my-donations", label: "My Donations" },
-    { path: "/badges", label: "Badges"},
+    { path: "/my-subscriptions", label: "My Subscriptions" },
+    { path: "/badges", label: "Badges" },
   ];
 
   return (
@@ -26,13 +27,12 @@ function DonorSidebar() {
       <p className="section-title">Navigation</p>
 
       <nav className="sidebar-nav">
-        {navItems.map(({ path, label, icon }) => (
+        {navItems.map(({ path, label }) => (
           <Link
             key={path}
             to={path}
             className={location.pathname === path ? "active-link" : ""}
           >
-            <span style={{ fontSize: 15, lineHeight: 1 }}>{icon}</span>
             {label}
           </Link>
         ))}

@@ -1,5 +1,7 @@
 const Project = require("../models/Project");
 const NGO = require("../models/NGO");
+const AdminActivity = require("../models/AdminActivity");
+const { calculateProjectFraudScore } = require("../services/fraudService");
 
 // ================= CREATE PROJECT =================
 exports.createProject = async (req, res) => {
@@ -22,15 +24,20 @@ exports.createProject = async (req, res) => {
       ngo: ngoProfile._id,
     });
 
+    const fraudResult = calculateProjectFraudScore(project, ngoProfile);
+    project.fraudScore = fraudResult.score;
+    project.riskReasons = fraudResult.reasons;
+    await project.save();
+
     const populatedProject = await Project.findById(project._id).populate(
       "ngo",
-      "organizationName category verified verificationStatus"
+      "name organizationName category verified verificationStatus"
     );
 
-    res.status(201).json(populatedProject);
+    return res.status(201).json(populatedProject);
   } catch (error) {
     console.error("CREATE PROJECT ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -44,7 +51,7 @@ exports.getMyProjects = async (req, res) => {
     }
 
     const projects = await Project.find({ ngo: ngoProfile._id })
-      .populate("ngo", "organizationName category verified verificationStatus")
+      .populate("ngo", "name organizationName category verified verificationStatus")
       .sort({ createdAt: -1 });
 
     const now = new Date();
@@ -68,13 +75,13 @@ exports.getMyProjects = async (req, res) => {
     }
 
     const refreshedProjects = await Project.find({ ngo: ngoProfile._id })
-      .populate("ngo", "organizationName category verified verificationStatus")
+      .populate("ngo", "name organizationName category verified verificationStatus")
       .sort({ createdAt: -1 });
 
-    res.json(refreshedProjects);
+    return res.json(refreshedProjects);
   } catch (error) {
     console.error("GET MY PROJECTS ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -109,21 +116,25 @@ exports.submitForReview = async (req, res) => {
       });
     }
 
+    const fraudResult = calculateProjectFraudScore(project, ngoProfile);
+    project.fraudScore = fraudResult.score;
+    project.riskReasons = fraudResult.reasons;
     project.status = "under_review";
+
     await project.save();
 
     const populatedProject = await Project.findById(project._id).populate(
       "ngo",
-      "organizationName category verified verificationStatus"
+      "name organizationName category verified verificationStatus"
     );
 
-    res.json({
+    return res.json({
       message: "Project submitted for admin review",
       project: populatedProject,
     });
   } catch (error) {
     console.error("SUBMIT FOR REVIEW ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -181,17 +192,21 @@ exports.updateProject = async (req, res) => {
       });
     }
 
+    const fraudResult = calculateProjectFraudScore(project, ngoProfile);
+    project.fraudScore = fraudResult.score;
+    project.riskReasons = fraudResult.reasons;
+
     await project.save();
 
     const populatedProject = await Project.findById(project._id).populate(
       "ngo",
-      "organizationName category verified verificationStatus"
+      "name organizationName category verified verificationStatus"
     );
 
-    res.json(populatedProject);
+    return res.json(populatedProject);
   } catch (error) {
     console.error("UPDATE PROJECT ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -221,10 +236,10 @@ exports.deleteProject = async (req, res) => {
     }
 
     await project.deleteOne();
-    res.json({ message: "Project deleted successfully" });
+    return res.json({ message: "Project deleted successfully" });
   } catch (error) {
     console.error("DELETE PROJECT ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -253,13 +268,13 @@ exports.pauseProject = async (req, res) => {
 
     const populatedProject = await Project.findById(project._id).populate(
       "ngo",
-      "organizationName category verified verificationStatus"
+      "name organizationName category verified verificationStatus"
     );
 
-    res.json(populatedProject);
+    return res.json(populatedProject);
   } catch (error) {
     console.error("PAUSE PROJECT ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -288,13 +303,13 @@ exports.resumeProject = async (req, res) => {
 
     const populatedProject = await Project.findById(project._id).populate(
       "ngo",
-      "organizationName category verified verificationStatus"
+      "name organizationName category verified verificationStatus"
     );
 
-    res.json(populatedProject);
+    return res.json(populatedProject);
   } catch (error) {
     console.error("RESUME PROJECT ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -307,14 +322,21 @@ exports.adminGetAllProjects = async (req, res) => {
       filter.status = req.query.status;
     }
 
+    if (req.query.flagged === "true") {
+      filter.flagged = true;
+    } else if (req.query.flagged === "false") {
+      filter.flagged = false;
+    }
+
     const projects = await Project.find(filter)
-      .populate("ngo", "organizationName category verified verificationStatus")
+      .populate("ngo", "name organizationName category verified verificationStatus")
+      .populate("reviewedBy", "name email")
       .sort({ createdAt: -1 });
 
-    res.json(projects);
+    return res.json(projects);
   } catch (error) {
     console.error("ADMIN GET PROJECTS ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -333,18 +355,41 @@ exports.updateProjectStatus = async (req, res) => {
       return res.status(404).json({ message: "Project not found" });
     }
 
-    if (!["under_review", "rejected", "active"].includes(project.status)) {
+    if (project.status !== "under_review") {
       return res.status(400).json({
         message: "Only projects under review can be approved or rejected",
       });
     }
 
+    const ngo = await NGO.findById(project.ngo);
+    const fraudResult = calculateProjectFraudScore(project, ngo);
+
+    project.fraudScore = fraudResult.score;
+    project.riskReasons = fraudResult.reasons;
     project.status = status;
+    project.reviewedBy = req.user._id;
+    project.reviewedAt = new Date();
+
     await project.save();
+
+    await AdminActivity.create({
+      admin: req.user._id,
+      action: status === "active" ? "approve_project" : "reject_project",
+      entityType: "project",
+      entityId: project._id,
+      message:
+        status === "active"
+          ? `Approved project: ${project.title}`
+          : `Rejected project: ${project.title}`,
+      metadata: {
+        status,
+        fraudScore: project.fraudScore,
+      },
+    });
 
     const populatedProject = await Project.findById(project._id).populate(
       "ngo",
-      "organizationName category verified verificationStatus"
+      "name organizationName category verified verificationStatus"
     );
 
     return res.status(200).json({
@@ -357,17 +402,83 @@ exports.updateProjectStatus = async (req, res) => {
   }
 };
 
+// ================= ADMIN FLAG / UNFLAG PROJECT =================
+exports.flagProject = async (req, res) => {
+  try {
+    const { flagged, flagReason } = req.body;
+
+    const project = await Project.findById(req.params.id);
+
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    const ngo = await NGO.findById(project.ngo);
+    const fraudResult = calculateProjectFraudScore(project, ngo);
+
+    project.fraudScore = fraudResult.score;
+    project.riskReasons = [...fraudResult.reasons];
+    project.flagged = !!flagged;
+    project.flagReason = flagged ? (flagReason || "") : "";
+    project.reviewedBy = req.user._id;
+    project.reviewedAt = new Date();
+
+    if (flagged && flagReason && !project.riskReasons.includes(flagReason)) {
+      project.riskReasons.push(flagReason);
+    }
+
+    await project.save();
+
+    await AdminActivity.create({
+      admin: req.user._id,
+      action: flagged ? "flag_project" : "unflag_project",
+      entityType: "project",
+      entityId: project._id,
+      message: flagged
+        ? `Flagged project: ${project.title}`
+        : `Removed flag from project: ${project.title}`,
+      metadata: {
+        flagged: project.flagged,
+        flagReason: project.flagReason,
+      },
+    });
+
+    return res.json({
+      message: "Project flag updated",
+      project,
+    });
+  } catch (error) {
+    console.error("FLAG PROJECT ERROR:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ================= ADMIN GET FLAGGED PROJECTS =================
+exports.getFlaggedProjects = async (req, res) => {
+  try {
+    const projects = await Project.find({ flagged: true })
+      .populate("ngo", "name organizationName")
+      .populate("reviewedBy", "name email")
+      .sort({ reviewedAt: -1, createdAt: -1 });
+
+    return res.json(projects);
+  } catch (error) {
+    console.error("GET FLAGGED PROJECTS ERROR:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 // ================= PUBLIC GET APPROVED / ACTIVE PROJECTS =================
 exports.getPublicProjects = async (req, res) => {
   try {
     const projects = await Project.find({ status: "active" })
-      .populate("ngo", "organizationName category verified verificationStatus")
+      .populate("ngo", "name organizationName category verified verificationStatus")
       .sort({ createdAt: -1 });
 
-    res.json(projects);
+    return res.json(projects);
   } catch (error) {
     console.error("GET PUBLIC PROJECTS ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -376,16 +487,16 @@ exports.getProjectById = async (req, res) => {
   try {
     const project = await Project.findById(req.params.id).populate(
       "ngo",
-      "organizationName category verified verificationStatus"
+      "name organizationName category verified verificationStatus"
     );
 
     if (!project) {
       return res.status(404).json({ message: "Project not found" });
     }
 
-    res.json(project);
+    return res.json(project);
   } catch (error) {
     console.error("GET PROJECT BY ID ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };

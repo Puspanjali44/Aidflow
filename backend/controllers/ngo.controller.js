@@ -345,45 +345,56 @@ exports.flagNgo = async (req, res) => {
       return res.status(404).json({ message: "NGO not found" });
     }
 
-    ngo.flagged = !!flagged;
-    ngo.flagReason = flagged ? (flagReason || "") : "";
-    ngo.reviewedBy = req.user._id;
+    ngo.flagged = Boolean(flagged);
+    ngo.flagReason = flagged ? (flagReason || "").trim() : "";
+    ngo.reviewedBy = req.user?._id || req.user?.id || null;
     ngo.reviewedAt = new Date();
 
-    const fraudResult = calculateNgoFraudScore(ngo);
-    ngo.fraudScore = fraudResult.score;
-    ngo.riskReasons = [...fraudResult.reasons];
+    let fraudResult = { score: 0, reasons: [] };
+    try {
+      fraudResult = calculateNgoFraudScore(ngo) || { score: 0, reasons: [] };
+    } catch (fraudErr) {
+      console.error("FRAUD SCORE ERROR:", fraudErr);
+    }
 
-    if (flagged && flagReason && !ngo.riskReasons.includes(flagReason)) {
-      ngo.riskReasons.push(flagReason);
+    ngo.fraudScore = fraudResult.score || 0;
+    ngo.riskReasons = Array.isArray(fraudResult.reasons) ? [...fraudResult.reasons] : [];
+
+    if (ngo.flagged && ngo.flagReason && !ngo.riskReasons.includes(ngo.flagReason)) {
+      ngo.riskReasons.push(ngo.flagReason);
     }
 
     await ngo.save();
 
-    await AdminActivity.create({
-      admin: req.user._id,
-      action: flagged ? "flag_ngo" : "unflag_ngo",
-      entityType: "ngo",
-      entityId: ngo._id,
-      message: flagged
-        ? `Flagged NGO: ${ngo.name}`
-        : `Removed NGO flag: ${ngo.name}`,
-      metadata: {
-        flagged: ngo.flagged,
-        flagReason: ngo.flagReason,
-      },
-    });
+    try {
+      await AdminActivity.create({
+        admin: req.user?._id || req.user?.id,
+        action: ngo.flagged ? "flag_ngo" : "unflag_ngo",
+        entityType: "ngo",
+        entityId: ngo._id,
+        message: ngo.flagged
+          ? `Flagged NGO: ${ngo.name}`
+          : `Removed NGO flag: ${ngo.name}`,
+        metadata: {
+          flagged: ngo.flagged,
+          flagReason: ngo.flagReason,
+        },
+      });
+    } catch (activityErr) {
+      console.error("ADMIN ACTIVITY CREATE ERROR:", activityErr);
+    }
 
-    return res.json({
-      message: "NGO flag updated",
+    return res.status(200).json({
+      message: ngo.flagged ? "NGO flagged successfully" : "NGO flag removed successfully",
       ngo,
     });
   } catch (error) {
     console.error("FLAG NGO ERROR:", error);
-    return res.status(500).json({ message: "Server error" });
+    return res.status(500).json({
+      message: error.message || "Server error",
+    });
   }
 };
-
 // ================= ADMIN: GET FLAGGED NGOs =================
 // GET /api/ngo/admin/flagged/list
 exports.getFlaggedNgos = async (req, res) => {

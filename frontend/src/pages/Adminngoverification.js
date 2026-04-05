@@ -10,14 +10,14 @@ const DOC_LABELS = {
   auditReport: "Audit Report",
   taxClearance: "Tax Clearance",
   boardMemberVerification: "Board Member Verification",
-  projectReport: "Project Report"
+  projectReport: "Project Report",
 };
 
 const STATUS_COLORS = {
   draft: { bg: "#f1f3f5", color: "#495057" },
   pending: { bg: "#fff3cd", color: "#856404" },
   approved: { bg: "#d8f3dc", color: "#1b4332" },
-  rejected: { bg: "#ffe3e3", color: "#c0392b" }
+  rejected: { bg: "#ffe3e3", color: "#c0392b" },
 };
 
 export default function AdminNgoVerification() {
@@ -26,6 +26,7 @@ export default function AdminNgoVerification() {
   const [selected, setSelected] = useState(null);
   const [remark, setRemark] = useState("");
   const [flagReason, setFlagReason] = useState("");
+  const [accountStatus, setAccountStatus] = useState("active");
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState(null);
@@ -35,7 +36,7 @@ export default function AdminNgoVerification() {
 
   const headers = useMemo(
     () => ({
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     }),
     [token]
   );
@@ -48,7 +49,7 @@ export default function AdminNgoVerification() {
       let url = `${API}/api/ngo/admin/all-ngos`;
 
       if (filter === "flagged") {
-        url = `${API}/api/ngo/admin/all-ngos?flagged=true`;
+        url = `${API}/api/ngo/admin/flagged/list`;
       } else if (filter !== "all") {
         url = `${API}/api/ngo/admin/all-ngos?status=${filter}`;
       }
@@ -74,14 +75,23 @@ export default function AdminNgoVerification() {
       setSelected(res.data);
       setRemark(res.data.adminRemark || "");
       setFlagReason(res.data.flagReason || "");
+      setAccountStatus(res.data.accountStatus || "active");
       setMessage(null);
     } catch (err) {
       console.error("OPEN DETAIL ERROR:", err);
       setMessage({
         type: "error",
-        text: err.response?.data?.message || "Failed to load NGO details."
+        text: err.response?.data?.message || "Failed to load NGO details.",
       });
     }
+  };
+
+  const refreshSelected = async (id) => {
+    const refreshed = await axios.get(`${API}/api/ngo/admin/${id}`, { headers });
+    setSelected(refreshed.data);
+    setRemark(refreshed.data.adminRemark || "");
+    setFlagReason(refreshed.data.flagReason || "");
+    setAccountStatus(refreshed.data.accountStatus || "active");
   };
 
   const handleAction = async (status) => {
@@ -90,7 +100,7 @@ export default function AdminNgoVerification() {
     if (status === "rejected" && !remark.trim()) {
       setMessage({
         type: "error",
-        text: "Please enter a remark before rejecting."
+        text: "Please enter a remark before rejecting.",
       });
       return;
     }
@@ -108,16 +118,16 @@ export default function AdminNgoVerification() {
 
       setMessage({
         type: "success",
-        text: `NGO ${status} successfully!`
+        text: `NGO ${status} successfully.`,
       });
 
-      setSelected(null);
+      await refreshSelected(selected._id);
       fetchNgos();
     } catch (err) {
       console.error("ACTION ERROR:", err);
       setMessage({
         type: "error",
-        text: err.response?.data?.message || "Action failed."
+        text: err.response?.data?.message || "Action failed.",
       });
     } finally {
       setActionLoading(false);
@@ -130,7 +140,7 @@ export default function AdminNgoVerification() {
     if (!flagReason.trim()) {
       setMessage({
         type: "error",
-        text: "Please enter a reason before flagging this NGO."
+        text: "Please enter a reason before flagging this NGO.",
       });
       return;
     }
@@ -146,19 +156,16 @@ export default function AdminNgoVerification() {
 
       setMessage({
         type: "success",
-        text: "NGO flagged for admin review."
+        text: "NGO flagged for admin review.",
       });
 
-      const refreshed = await axios.get(`${API}/api/ngo/admin/${selected._id}`, {
-        headers
-      });
-      setSelected(refreshed.data);
+      await refreshSelected(selected._id);
       fetchNgos();
     } catch (err) {
       console.error("FLAG NGO ERROR:", err);
       setMessage({
         type: "error",
-        text: err.response?.data?.message || "Failed to flag NGO."
+        text: err.response?.data?.message || "Failed to flag NGO.",
       });
     } finally {
       setActionLoading(false);
@@ -179,20 +186,46 @@ export default function AdminNgoVerification() {
 
       setMessage({
         type: "success",
-        text: "Flag removed successfully."
+        text: "Flag removed successfully.",
       });
 
-      const refreshed = await axios.get(`${API}/api/ngo/admin/${selected._id}`, {
-        headers
-      });
-      setSelected(refreshed.data);
-      setFlagReason("");
+      await refreshSelected(selected._id);
       fetchNgos();
     } catch (err) {
       console.error("CLEAR FLAG ERROR:", err);
       setMessage({
         type: "error",
-        text: err.response?.data?.message || "Failed to clear flag."
+        text: err.response?.data?.message || "Failed to clear flag.",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleAccountStatusUpdate = async () => {
+    if (!selected) return;
+
+    setActionLoading(true);
+
+    try {
+      await axios.put(
+        `${API}/api/ngo/admin/${selected._id}/account-status`,
+        { accountStatus },
+        { headers }
+      );
+
+      setMessage({
+        type: "success",
+        text: `Account status updated to ${accountStatus}.`,
+      });
+
+      await refreshSelected(selected._id);
+      fetchNgos();
+    } catch (err) {
+      console.error("ACCOUNT STATUS UPDATE ERROR:", err);
+      setMessage({
+        type: "error",
+        text: err.response?.data?.message || "Failed to update account status.",
       });
     } finally {
       setActionLoading(false);
@@ -234,9 +267,7 @@ export default function AdminNgoVerification() {
         <div className="ngo-list">
           {ngos.map((ngo) => {
             const sc = STATUS_COLORS[ngo.verificationStatus] || STATUS_COLORS.draft;
-            const uploadedDocs = docKeys.filter(
-              (k) => ngo.documents?.[k]?.fileUrl
-            ).length;
+            const uploadedDocs = docKeys.filter((k) => ngo.documents?.[k]?.fileUrl).length;
 
             return (
               <div key={ngo._id} className="ngo-row">
@@ -248,8 +279,7 @@ export default function AdminNgoVerification() {
                   <div>
                     <h3>{ngo.name}</h3>
                     <p>
-                      {ngo.user?.email || "No email"} &nbsp;·&nbsp;{" "}
-                      {ngo.category || "No category"} &nbsp;·&nbsp;{" "}
+                      {ngo.user?.email || "No email"} · {ngo.category || "No category"} ·{" "}
                       {ngo.location || "No location"}
                     </p>
                     <p className="doc-count">{uploadedDocs}/6 documents uploaded</p>
@@ -270,14 +300,9 @@ export default function AdminNgoVerification() {
                     {ngo.verificationStatus}
                   </span>
 
-                  {ngo.flagged && (
-                    <span className="flag-badge">Flagged</span>
-                  )}
+                  {ngo.flagged && <span className="flag-badge">Flagged</span>}
 
-                  <button
-                    className="btn-review"
-                    onClick={() => openDetail(ngo._id)}
-                  >
+                  <button className="btn-review" onClick={() => openDetail(ngo._id)}>
                     Review →
                   </button>
                 </div>
@@ -294,15 +319,11 @@ export default function AdminNgoVerification() {
               <div>
                 <h2>{selected.name}</h2>
                 <p>
-                  {selected.user?.email} &nbsp;·&nbsp; Reg. No:{" "}
-                  {selected.registrationNumber}
+                  {selected.user?.email} · Reg. No: {selected.registrationNumber}
                 </p>
               </div>
 
-              <button
-                className="modal-close"
-                onClick={() => setSelected(null)}
-              >
+              <button className="modal-close" onClick={() => setSelected(null)}>
                 ✕
               </button>
             </div>
@@ -314,12 +335,14 @@ export default function AdminNgoVerification() {
                 ["Phone", selected.phone],
                 ["Website", selected.website],
                 ["Established", selected.establishedYear],
-                ["Account Status", selected.accountStatus]
+                ["Account Status", selected.accountStatus],
+                ["Verification Status", selected.verificationStatus],
+                ["Fraud Score", selected.fraudScore ?? 0],
               ].map(([label, val]) =>
-                val ? (
+                val !== undefined && val !== null && val !== "" ? (
                   <div key={label} className="info-item">
                     <span className="info-label">{label}</span>
-                    <span className="info-val">{val}</span>
+                    <span className="info-val">{String(val)}</span>
                   </div>
                 ) : null
               )}
@@ -335,6 +358,17 @@ export default function AdminNgoVerification() {
               <div className="flagged-panel">
                 <strong>🚩 Flagged for Review</strong>
                 <p>{selected.flagReason || "No reason provided."}</p>
+              </div>
+            )}
+
+            {selected.riskReasons?.length > 0 && (
+              <div className="prev-remark">
+                <strong>Risk Reasons:</strong>
+                <ul style={{ marginTop: "8px", paddingLeft: "18px" }}>
+                  {selected.riskReasons.map((reason, index) => (
+                    <li key={index}>{reason}</li>
+                  ))}
+                </ul>
               </div>
             )}
 
@@ -398,12 +432,37 @@ export default function AdminNgoVerification() {
               />
             </div>
 
-            {message && (
-              <div
-                className={`message ${
-                  message.type === "error" ? "error" : "success"
-                }`}
+            <div className="remark-area">
+              <label>Account Status</label>
+              <select
+                value={accountStatus}
+                onChange={(e) => setAccountStatus(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  borderRadius: "10px",
+                  border: "1px solid #d0d7de",
+                  background: "#fff",
+                }}
               >
+                <option value="active">active</option>
+                <option value="paused">paused</option>
+                <option value="deactivated">deactivated</option>
+              </select>
+
+              <div style={{ marginTop: "10px" }}>
+                <button
+                  className="btn-review"
+                  onClick={handleAccountStatusUpdate}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? "Processing..." : "Update Account Status"}
+                </button>
+              </div>
+            </div>
+
+            {message && (
+              <div className={`message ${message.type === "error" ? "error" : "success"}`}>
                 {message.text}
               </div>
             )}
@@ -449,9 +508,7 @@ export default function AdminNgoVerification() {
             </div>
 
             {selected.verificationStatus === "approved" && (
-              <div className="already-approved">
-                ✅ This NGO is already approved.
-              </div>
+              <div className="already-approved">✅ This NGO is already approved.</div>
             )}
           </div>
         </div>

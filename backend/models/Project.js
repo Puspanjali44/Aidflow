@@ -2,37 +2,39 @@ const mongoose = require("mongoose");
 
 const projectSchema = new mongoose.Schema(
   {
+    // ================= BASIC INFO =================
     title: {
       type: String,
-      required: true
+      required: true,
     },
 
     description: {
       type: String,
-      required: true
+      required: true,
     },
 
     goalAmount: {
       type: Number,
-      required: true
+      required: true,
     },
 
     raisedAmount: {
       type: Number,
-      default: 0
+      default: 0,
     },
 
-    // ✅ Cover photo filename (served from /uploads/)
+    // ================= MEDIA =================
     image: {
       type: String,
-      default: null
+      default: null,
     },
 
     endDate: {
       type: Date,
-      required: true
+      required: true,
     },
 
+    // ================= STATUS =================
     status: {
       type: String,
       enum: [
@@ -41,27 +43,60 @@ const projectSchema = new mongoose.Schema(
         "active",
         "paused",
         "completed",
-        "rejected"
+        "rejected",
       ],
-      default: "draft"
+      default: "draft",
     },
 
     donorCount: {
       type: Number,
-      default: 0
+      default: 0,
     },
 
+    // ================= RELATION =================
     ngo: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "NGO",
-      required: true
+      required: true,
     },
 
-    //  Track total spending from updates
+    // ================= TRANSPARENCY =================
     totalSpent: {
       type: Number,
+      default: 0,
+    },
 
-    }
+    // ================= FRAUD / ADMIN REVIEW =================
+    fraudScore: {
+      type: Number,
+      default: 0,
+    },
+
+    flagged: {
+      type: Boolean,
+      default: false,
+    },
+
+    flagReason: {
+      type: String,
+      default: "",
+    },
+
+    riskReasons: {
+      type: [String],
+      default: [],
+    },
+
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    reviewedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

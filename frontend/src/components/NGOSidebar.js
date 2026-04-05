@@ -16,6 +16,7 @@ function NGOSidebar() {
     { path: "/create-project", label: "Create Project" },
     { path: "/settings", label: "Settings" },
     { path: "/Analytics", label: "Analytics" },
+    
   ];
 
   return (

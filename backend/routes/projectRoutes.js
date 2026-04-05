@@ -84,6 +84,8 @@ router.get("/admin/all", protect, authorizeRoles("admin"), adminGetAllProjects);
 
 // Admin approves / rejects project
 router.put("/:id/status", protect, authorizeRoles("admin"), updateProjectStatus);
+// TODO: Implement flagProject controller
+// router.put("/admin/:id/flag", protect, authorizeRoles("admin"), flagProject);
 
 // ================= SINGLE PROJECT ROUTE (KEEP LAST) =================
 

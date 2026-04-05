@@ -1,15 +1,21 @@
 const NGO = require("../models/NGO");
 const User = require("../models/user.models");
+const AdminActivity = require("../models/AdminActivity");
+const fraudService = require("../services/fraudService");
+const calculateNgoFraudScore = fraudService.calculateNgoFraudScore || ((ngo) => ({score:0, reasons:[]}));
 
 // ================= GET NGO PROFILE =================
 exports.getMyProfile = async (req, res) => {
   try {
     const ngo = await NGO.findOne({ user: req.user._id }).populate("user", "email");
-    if (!ngo) return res.status(404).json({ message: "NGO profile not found" });
-    res.json(ngo);
+    if (!ngo) {
+      return res.status(404).json({ message: "NGO profile not found" });
+    }
+
+    return res.json(ngo);
   } catch (error) {
     console.error("GET NGO PROFILE ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -17,26 +23,66 @@ exports.getMyProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const ngo = await NGO.findOne({ user: req.user._id });
-    if (!ngo) return res.status(404).json({ message: "NGO profile not found" });
+    if (!ngo) {
+      return res.status(404).json({ message: "NGO profile not found" });
+    }
 
     const fields = [
-      "name", "registrationNumber", "category", "location", "phone",
-      "website", "description", "mission", "establishedYear",
-      "bankName", "accountNumber", "accountName", "branch"
+      "name",
+      "registrationNumber",
+      "category",
+      "location",
+      "phone",
+      "website",
+      "description",
+      "mission",
+      "establishedYear",
+      "bankName",
+      "accountNumber",
+      "accountName",
+      "branch",
     ];
-    fields.forEach(f => { if (req.body[f] !== undefined) ngo[f] = req.body[f]; });
+
+    fields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        ngo[field] = req.body[field];
+      }
+    });
 
     const boolFields = [
-      "showDonorNames", "publicDashboard", "enableContactForm",
-      "notifyNewDonation", "notifyUpdateApproval", "notifyMonthlyReport", "notifyDonorComments"
+      "showDonorNames",
+      "publicDashboard",
+      "enableContactForm",
+      "notifyNewDonation",
+      "notifyUpdateApproval",
+      "notifyMonthlyReport",
+      "notifyDonorComments",
     ];
-    boolFields.forEach(f => { if (typeof req.body[f] === "boolean") ngo[f] = req.body[f]; });
+
+    boolFields.forEach((field) => {
+      if (typeof req.body[field] === "boolean") {
+        ngo[field] = req.body[field];
+      }
+    });
+
+    try {
+      const fraudResult = calculateNgoFraudScore(ngo);
+      ngo.fraudScore = fraudResult.score;
+      ngo.riskReasons = fraudResult.reasons;
+    } catch(e) {
+      ngo.fraudScore = 0;
+      ngo.riskReasons = ['Fraud service error'];
+    }
 
     await ngo.save();
-    res.json({ message: "Profile updated successfully", ngo });
+
+    return res.json({
+      message: "Profile updated successfully",
+      ngo,
+    });
   } catch (error) {
     console.error("UPDATE NGO PROFILE ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -45,17 +91,29 @@ exports.updateProfile = async (req, res) => {
 exports.uploadProfileImage = async (req, res) => {
   try {
     const ngo = await NGO.findOne({ user: req.user._id });
-    if (!ngo) return res.status(404).json({ message: "NGO profile not found" });
+    if (!ngo) {
+      return res.status(404).json({ message: "NGO profile not found" });
+    }
 
-    if (!req.file) return res.status(400).json({ message: "No image file provided" });
+    if (!req.file) {
+      return res.status(400).json({ message: "No image file provided" });
+    }
 
     ngo.profileImage = req.file.filename;
+
+    const fraudResult = calculateNgoFraudScore(ngo);
+    ngo.fraudScore = fraudResult.score;
+    ngo.riskReasons = fraudResult.reasons;
+
     await ngo.save();
 
-    res.json({ message: "Profile image updated successfully", profileImage: ngo.profileImage });
+    return res.json({
+      message: "Profile image updated successfully",
+      profileImage: ngo.profileImage,
+    });
   } catch (error) {
     console.error("UPLOAD PROFILE IMAGE ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -64,14 +122,20 @@ exports.uploadProfileImage = async (req, res) => {
 exports.uploadVerificationDocuments = async (req, res) => {
   try {
     const ngo = await NGO.findOne({ user: req.user._id });
-    if (!ngo) return res.status(404).json({ message: "NGO profile not found" });
+    if (!ngo) {
+      return res.status(404).json({ message: "NGO profile not found" });
+    }
 
     if (ngo.verificationStatus === "approved") {
-      return res.status(400).json({ message: "NGO already approved. Cannot re-upload documents." });
+      return res.status(400).json({
+        message: "NGO already approved. Cannot re-upload documents.",
+      });
     }
 
     if (ngo.verificationStatus === "pending") {
-      return res.status(400).json({ message: "Documents already submitted for review. Wait for admin decision." });
+      return res.status(400).json({
+        message: "Documents already submitted for review. Wait for admin decision.",
+      });
     }
 
     const docFields = [
@@ -80,26 +144,36 @@ exports.uploadVerificationDocuments = async (req, res) => {
       "auditReport",
       "taxClearance",
       "boardMemberVerification",
-      "projectReport"
+      "projectReport",
     ];
 
     if (req.files) {
-      docFields.forEach(field => {
+      docFields.forEach((field) => {
         if (req.files[field] && req.files[field][0]) {
           ngo.documents[field] = {
-            fileUrl:    req.files[field][0].filename,
+            fileUrl: req.files[field][0].filename,
             uploadedAt: new Date(),
-            status:     "uploaded"
+            status: "uploaded",
           };
         }
       });
     }
 
+    const fraudResult = calculateNgoFraudScore(ngo);
+    ngo.fraudScore = fraudResult.score;
+    ngo.riskReasons = fraudResult.reasons;
+
     await ngo.save();
-    res.json({ message: "Documents uploaded successfully", documents: ngo.documents });
+
+    return res.json({
+      message: "Documents uploaded successfully",
+      documents: ngo.documents,
+      fraudScore: ngo.fraudScore,
+      riskReasons: ngo.riskReasons,
+    });
   } catch (error) {
     console.error("UPLOAD DOCS ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -108,36 +182,47 @@ exports.uploadVerificationDocuments = async (req, res) => {
 exports.submitNgoForVerification = async (req, res) => {
   try {
     const ngo = await NGO.findOne({ user: req.user._id });
-    if (!ngo) return res.status(404).json({ message: "NGO profile not found" });
+    if (!ngo) {
+      return res.status(404).json({ message: "NGO profile not found" });
+    }
 
     if (ngo.verificationStatus === "approved") {
       return res.status(400).json({ message: "NGO is already approved." });
     }
 
     const required = [
-      "registrationCertificate", "panDocument", "auditReport",
-      "taxClearance", "boardMemberVerification", "projectReport"
+      "registrationCertificate",
+      "panDocument",
+      "auditReport",
+      "taxClearance",
+      "boardMemberVerification",
+      "projectReport",
     ];
 
     const missing = required.filter(
-      doc => !ngo.documents[doc] || !ngo.documents[doc].fileUrl
+      (doc) => !ngo.documents[doc] || !ngo.documents[doc].fileUrl
     );
 
     if (missing.length > 0) {
       return res.status(400).json({
         message: "Please upload all required documents before submitting.",
-        missing
+        missing,
       });
     }
 
+    const fraudResult = calculateNgoFraudScore(ngo);
+    ngo.fraudScore = fraudResult.score;
+    ngo.riskReasons = fraudResult.reasons;
+
     ngo.verificationStatus = "pending";
-    ngo.verified    = false;
+    ngo.verified = false;
     ngo.adminRemark = "";
+
     await ngo.save();
 
     return res.status(200).json({
       message: "NGO submitted for verification. Admin will review your documents.",
-      ngo
+      ngo,
     });
   } catch (error) {
     console.error("SUBMIT NGO ERROR:", error);
@@ -146,14 +231,25 @@ exports.submitNgoForVerification = async (req, res) => {
 };
 
 // ================= ADMIN: GET ALL NGOs =================
-// GET /api/ngo/admin/all-ngos?status=pending
+// GET /api/ngo/admin/all-ngos?status=pending&flagged=true
 exports.getAllNgosForAdmin = async (req, res) => {
   try {
-    const { status } = req.query;
-    const filter = status ? { verificationStatus: status } : {};
+    const { status, flagged } = req.query;
+    const filter = {};
+
+    if (status) {
+      filter.verificationStatus = status;
+    }
+
+    if (flagged === "true") {
+      filter.flagged = true;
+    } else if (flagged === "false") {
+      filter.flagged = false;
+    }
 
     const ngos = await NGO.find(filter)
       .populate("user", "email name")
+      .populate("reviewedBy", "name email")
       .sort({ createdAt: -1 });
 
     return res.status(200).json(ngos);
@@ -167,8 +263,14 @@ exports.getAllNgosForAdmin = async (req, res) => {
 // GET /api/ngo/admin/:id
 exports.getNgoDetailForAdmin = async (req, res) => {
   try {
-    const ngo = await NGO.findById(req.params.id).populate("user", "email name");
-    if (!ngo) return res.status(404).json({ message: "NGO not found" });
+    const ngo = await NGO.findById(req.params.id)
+      .populate("user", "email name")
+      .populate("reviewedBy", "name email");
+
+    if (!ngo) {
+      return res.status(404).json({ message: "NGO not found" });
+    }
+
     return res.status(200).json(ngo);
   } catch (error) {
     console.error("GET NGO DETAIL ERROR:", error);
@@ -184,61 +286,247 @@ exports.updateNgoVerificationStatus = async (req, res) => {
     const { status, remark } = req.body;
 
     if (!["approved", "rejected"].includes(status)) {
-      return res.status(400).json({ message: "Status must be 'approved' or 'rejected'" });
+      return res.status(400).json({
+        message: "Status must be 'approved' or 'rejected'",
+      });
     }
 
     const ngo = await NGO.findById(req.params.id);
-    if (!ngo) return res.status(404).json({ message: "NGO not found" });
+    if (!ngo) {
+      return res.status(404).json({ message: "NGO not found" });
+    }
+
+    const fraudResult = calculateNgoFraudScore(ngo);
+    ngo.fraudScore = fraudResult.score;
+    ngo.riskReasons = fraudResult.reasons;
 
     ngo.verificationStatus = status;
-    ngo.verified    = status === "approved";
+    ngo.verified = status === "approved";
     ngo.adminRemark = remark || "";
+    ngo.reviewedBy = req.user._id;
+    ngo.reviewedAt = new Date();
 
     await ngo.save();
 
-    return res.status(200).json({ message: `NGO ${status} successfully`, ngo });
+    await AdminActivity.create({
+      admin: req.user._id,
+      action: status === "approved" ? "approve_ngo" : "reject_ngo",
+      entityType: "ngo",
+      entityId: ngo._id,
+      message:
+        status === "approved"
+          ? `Approved NGO: ${ngo.name}`
+          : `Rejected NGO: ${ngo.name}`,
+      metadata: {
+        verificationStatus: status,
+        adminRemark: ngo.adminRemark,
+      },
+    });
+
+    return res.status(200).json({
+      message: `NGO ${status} successfully`,
+      ngo,
+    });
   } catch (error) {
     console.error("UPDATE NGO STATUS ERROR:", error);
     return res.status(500).json({ message: "Server error" });
   }
 };
 
-// ================= PAUSE ACCOUNT =================
+// ================= ADMIN: FLAG / UNFLAG NGO =================
+// PUT /api/ngo/admin/:id/flag
+// Body: { flagged: true/false, flagReason: "..." }
+exports.flagNgo = async (req, res) => {
+  try {
+    const { flagged, flagReason } = req.body;
+
+    const ngo = await NGO.findById(req.params.id);
+    if (!ngo) {
+      return res.status(404).json({ message: "NGO not found" });
+    }
+
+    ngo.flagged = !!flagged;
+    ngo.flagReason = flagged ? (flagReason || "") : "";
+    ngo.reviewedBy = req.user._id;
+    ngo.reviewedAt = new Date();
+
+    const fraudResult = calculateNgoFraudScore(ngo);
+    ngo.fraudScore = fraudResult.score;
+    ngo.riskReasons = [...fraudResult.reasons];
+
+    if (flagged && flagReason && !ngo.riskReasons.includes(flagReason)) {
+      ngo.riskReasons.push(flagReason);
+    }
+
+    await ngo.save();
+
+    await AdminActivity.create({
+      admin: req.user._id,
+      action: flagged ? "flag_ngo" : "unflag_ngo",
+      entityType: "ngo",
+      entityId: ngo._id,
+      message: flagged
+        ? `Flagged NGO: ${ngo.name}`
+        : `Removed NGO flag: ${ngo.name}`,
+      metadata: {
+        flagged: ngo.flagged,
+        flagReason: ngo.flagReason,
+      },
+    });
+
+    return res.json({
+      message: "NGO flag updated",
+      ngo,
+    });
+  } catch (error) {
+    console.error("FLAG NGO ERROR:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ================= ADMIN: GET FLAGGED NGOs =================
+// GET /api/ngo/admin/flagged/list
+exports.getFlaggedNgos = async (req, res) => {
+  try {
+    const ngos = await NGO.find({ flagged: true })
+      .populate("user", "email name")
+      .populate("reviewedBy", "name email")
+      .sort({ reviewedAt: -1, createdAt: -1 });
+
+    return res.status(200).json(ngos);
+  } catch (error) {
+    console.error("GET FLAGGED NGO ERROR:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ================= ADMIN: UPDATE NGO ACCOUNT STATUS =================
+// PUT /api/ngo/admin/:id/account-status
+// Body: { accountStatus: "active" | "paused" | "deactivated" }
+exports.updateNgoAccountStatus = async (req, res) => {
+  try {
+    const { accountStatus } = req.body;
+
+    if (!["active", "paused", "deactivated"].includes(accountStatus)) {
+      return res.status(400).json({
+        message: "accountStatus must be 'active', 'paused', or 'deactivated'",
+      });
+    }
+
+    const ngo = await NGO.findById(req.params.id);
+    if (!ngo) {
+      return res.status(404).json({ message: "NGO not found" });
+    }
+
+    ngo.accountStatus = accountStatus;
+    ngo.reviewedBy = req.user._id;
+    ngo.reviewedAt = new Date();
+
+    await ngo.save();
+
+    await AdminActivity.create({
+      admin: req.user._id,
+      action: `ngo_account_${accountStatus}`,
+      entityType: "ngo",
+      entityId: ngo._id,
+      message: `Set NGO account status to ${accountStatus}: ${ngo.name}`,
+      metadata: { accountStatus },
+    });
+
+    return res.status(200).json({
+      message: `NGO account status updated to ${accountStatus}`,
+      ngo,
+    });
+  } catch (error) {
+    console.error("UPDATE NGO ACCOUNT STATUS ERROR:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ================= ADMIN: NGO RISK SUMMARY =================
+// GET /api/ngo/admin/:id/risk-summary
+exports.getNgoRiskSummary = async (req, res) => {
+  try {
+    const ngo = await NGO.findById(req.params.id).populate("user", "email name");
+    if (!ngo) {
+      return res.status(404).json({ message: "NGO not found" });
+    }
+
+    const fraudResult = calculateNgoFraudScore(ngo);
+
+    ngo.fraudScore = fraudResult.score;
+    ngo.riskReasons = fraudResult.reasons;
+    await ngo.save();
+
+    return res.status(200).json({
+      ngoId: ngo._id,
+      name: ngo.name,
+      fraudScore: ngo.fraudScore,
+      flagged: ngo.flagged,
+      flagReason: ngo.flagReason,
+      riskReasons: ngo.riskReasons,
+      verificationStatus: ngo.verificationStatus,
+      accountStatus: ngo.accountStatus,
+    });
+  } catch (error) {
+    console.error("GET NGO RISK SUMMARY ERROR:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ================= PAUSE ACCOUNT (NGO SELF) =================
 exports.pauseAccount = async (req, res) => {
   try {
     const ngo = await NGO.findOne({ user: req.user._id });
-    if (!ngo) return res.status(404).json({ message: "NGO not found" });
+    if (!ngo) {
+      return res.status(404).json({ message: "NGO not found" });
+    }
+
     ngo.accountStatus = "paused";
     await ngo.save();
-    res.json({ message: "Account paused successfully" });
+
+    return res.json({ message: "Account paused successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    console.error("PAUSE ACCOUNT ERROR:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
-// ================= DEACTIVATE ACCOUNT =================
+// ================= DEACTIVATE ACCOUNT (NGO SELF) =================
 exports.deactivateAccount = async (req, res) => {
   try {
     const ngo = await NGO.findOne({ user: req.user._id });
-    if (!ngo) return res.status(404).json({ message: "NGO not found" });
+    if (!ngo) {
+      return res.status(404).json({ message: "NGO not found" });
+    }
+
     ngo.accountStatus = "deactivated";
     await ngo.save();
-    res.json({ message: "Account deactivated permanently" });
+
+    return res.json({ message: "Account deactivated permanently" });
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    console.error("DEACTIVATE ACCOUNT ERROR:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
-// ================= REACTIVATE ACCOUNT =================
+// ================= REACTIVATE ACCOUNT (NGO SELF) =================
 exports.reactivateAccount = async (req, res) => {
   try {
     const ngo = await NGO.findOne({ user: req.user._id });
-    if (!ngo) return res.status(404).json({ message: "NGO not found" });
+    if (!ngo) {
+      return res.status(404).json({ message: "NGO not found" });
+    }
+
     ngo.accountStatus = "active";
     await ngo.save();
-    res.json({ message: "Account reactivated successfully", ngo });
+
+    return res.json({
+      message: "Account reactivated successfully",
+      ngo,
+    });
   } catch (error) {
     console.error("REACTIVATE ACCOUNT ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };

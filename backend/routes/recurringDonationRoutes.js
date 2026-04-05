@@ -9,10 +9,17 @@ const {
 } = require("../controllers/recurringDonationController");
 
 const { protect } = require("../middleware/authMiddleware");
+const { authorizeRoles } = require("../middleware/roleMiddleware");
 
-router.post("/initiate", protect, initiateRecurringDonation);
-router.get("/my", protect, getMyRecurringDonations);
-router.patch("/:id/cancel", protect, cancelRecurringDonation);
-router.patch("/:id/pause", protect, pauseRecurringDonation);
+router.post(
+  "/initiate",
+  protect,
+  authorizeRoles("donor"),
+  initiateRecurringDonation
+);
+
+router.get("/my", protect, authorizeRoles("donor"), getMyRecurringDonations);
+router.patch("/:id/cancel", protect, authorizeRoles("donor"), cancelRecurringDonation);
+router.patch("/:id/pause", protect, authorizeRoles("donor"), pauseRecurringDonation);
 
 module.exports = router;

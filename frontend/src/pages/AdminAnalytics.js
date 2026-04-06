@@ -203,6 +203,9 @@ function AdminAnalytics() {
     0
   );
 
+  const totalNGOs = analytics.ngoFundingBreakdown.length;
+  const totalProjects = analytics.projectFundingBreakdown.length;
+
   if (loading) {
     return (
       <div className="admin-page">
@@ -226,24 +229,24 @@ function AdminAnalytics() {
 
       <div className="stats-grid">
         <TopSummaryCard
-          title="Total Money by NGOs"
-          value={formatCurrency(totalNgoMoney)}
-          sub="All successful donations grouped by NGO"
+          title="Total NGOs"
+          value={totalNGOs}
+          sub="All NGOs in analytics"
         />
         <TopSummaryCard
-          title="Total Money by Projects"
+          title="Total Projects"
+          value={totalProjects}
+          sub="All projects in analytics"
+        />
+        <TopSummaryCard
+          title="Total Donation Amount"
           value={formatCurrency(totalProjectMoney)}
-          sub="All successful donations grouped by project"
+          sub="All successful donations"
         />
         <TopSummaryCard
           title="Donation Records"
           value={totalDonationRecords}
           sub="Successful donation entries"
-        />
-        <TopSummaryCard
-          title="Flagged Projects"
-          value={analytics.fraudHighlights.flaggedProjects.length}
-          sub="Projects needing admin attention"
         />
       </div>
 
@@ -335,7 +338,7 @@ function AdminAnalytics() {
                     <td>{project.ngoName}</td>
                     <td>{formatCurrency(project.totalAmount)}</td>
                     <td>
-                      <Link className="view-link" to={`/projects/${project._id}`}>
+                      <Link className="view-link" to={`/admin/projects/${project._id}`}>
                         Open
                       </Link>
                     </td>

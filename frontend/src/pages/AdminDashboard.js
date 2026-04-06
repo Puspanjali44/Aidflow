@@ -24,6 +24,7 @@ function formatTimeAgo(dateLike) {
 export default function AdminDashboard() {
   const [summary, setSummary] = useState({
     totalNGOs: 0,
+    totalProjects: 0,
     pendingNGORequests: 0,
     pendingProjects: 0,
     totalDonations: 0,
@@ -87,6 +88,7 @@ export default function AdminDashboard() {
 
       setSummary({
         totalNGOs: summaryData.totalNGOs || 0,
+        totalProjects: summaryData.totalProjects || 0,
         pendingNGORequests: summaryData.pendingNGORequests || 0,
         pendingProjects: summaryData.pendingProjects || 0,
         totalDonations: summaryData.totalDonations || 0,
@@ -153,27 +155,27 @@ export default function AdminDashboard() {
 
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon">📊</div>
+          <div className="stat-icon">🏢</div>
           <h3>Total NGOs</h3>
           <p className="stat-value">{summary.totalNGOs}</p>
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon">🔍</div>
-          <h3>Pending NGO Requests</h3>
-          <p className="stat-value">{summary.pendingNGORequests}</p>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon">📋</div>
-          <h3>Pending Projects</h3>
-          <p className="stat-value">{summary.pendingProjects}</p>
+          <div className="stat-icon">📁</div>
+          <h3>Total Projects</h3>
+          <p className="stat-value">{summary.totalProjects}</p>
         </div>
 
         <div className="stat-card">
           <div className="stat-icon">💰</div>
-          <h3>Total Donations</h3>
+          <h3>Total Donation Amount</h3>
           <p className="stat-value">{formatCurrency(summary.totalDonationAmount)}</p>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon">🧾</div>
+          <h3>Total Donation Records</h3>
+          <p className="stat-value">{summary.totalDonations}</p>
         </div>
       </div>
 
@@ -221,6 +223,14 @@ export default function AdminDashboard() {
             <strong>{summary.approvedNGOs}</strong>
           </div>
           <div className="overview-item">
+            <span>Pending NGO Requests</span>
+            <strong>{summary.pendingNGORequests}</strong>
+          </div>
+          <div className="overview-item">
+            <span>Pending Projects</span>
+            <strong>{summary.pendingProjects}</strong>
+          </div>
+          <div className="overview-item">
             <span>Active Projects</span>
             <strong>{summary.activeProjects}</strong>
           </div>
@@ -231,10 +241,6 @@ export default function AdminDashboard() {
           <div className="overview-item">
             <span>Flagged Projects</span>
             <strong>{summary.flaggedProjects}</strong>
-          </div>
-          <div className="overview-item">
-            <span>Total Donation Records</span>
-            <strong>{summary.totalDonations}</strong>
           </div>
         </div>
       </div>

@@ -108,23 +108,23 @@ exports.getFraudOverview = async (req, res) => {
       await Promise.all([
         NGO.find({ flagged: true })
           .select(
-            "name verificationStatus accountStatus fraudScore flagReason riskReasons reviewedAt"
+            "name organizationName verificationStatus accountStatus fraudScore flagReason riskReasons reviewedAt"
           )
           .sort({ reviewedAt: -1, createdAt: -1 }),
 
         Project.find({ flagged: true })
-          .populate("ngo", "name")
+          .populate("ngo", "name organizationName")
           .select("title status fraudScore flagReason riskReasons reviewedAt ngo")
           .sort({ reviewedAt: -1, createdAt: -1 }),
 
         NGO.find({ fraudScore: { $gte: 30 } })
           .select(
-            "name verificationStatus accountStatus fraudScore flagged riskReasons"
+            "name organizationName verificationStatus accountStatus fraudScore flagged riskReasons"
           )
           .sort({ fraudScore: -1, createdAt: -1 }),
 
         Project.find({ fraudScore: { $gte: 20 } })
-          .populate("ngo", "name")
+          .populate("ngo", "name organizationName")
           .select("title status fraudScore flagged riskReasons ngo")
           .sort({ fraudScore: -1, createdAt: -1 }),
       ]);
@@ -164,6 +164,10 @@ exports.getAdminAnalytics = async (req, res) => {
       highRiskNgos,
       highRiskProjects,
       recentActivity,
+      totalNGOs,
+      totalProjects,
+      totalSuccessfulDonations,
+      totalDonationAgg,
     ] = await Promise.all([
       Donation.aggregate([
         { $match: { paymentStatus: "SUCCESS" } },
@@ -233,46 +237,76 @@ exports.getAdminAnalytics = async (req, res) => {
         { $sort: { totalAmount: -1 } },
       ]),
 
-      Donation.aggregate([
-        { $match: { paymentStatus: "SUCCESS" } },
+      // FIXED: START FROM PROJECT SO ALL PROJECTS SHOW
+      Project.aggregate([
         {
           $lookup: {
-            from: "projects",
-            localField: "project",
-            foreignField: "_id",
-            as: "project",
+            from: "donations",
+            localField: "_id",
+            foreignField: "project",
+            as: "donations",
           },
         },
-        { $unwind: "$project" },
         {
           $lookup: {
             from: "ngos",
-            localField: "project.ngo",
+            localField: "ngo",
             foreignField: "_id",
             as: "ngo",
           },
         },
-        { $unwind: "$ngo" },
         {
-          $group: {
-            _id: "$project._id",
-            projectTitle: { $first: "$project.title" },
-            ngoId: { $first: "$ngo._id" },
-            ngoName: {
-              $first: {
-                $ifNull: ["$ngo.organizationName", "$ngo.name"],
-              },
-            },
-            totalAmount: { $sum: "$amount" },
-            totalDonations: { $sum: 1 },
-            goalAmount: { $first: { $ifNull: ["$project.goalAmount", 0] } },
-            raisedAmount: { $first: { $ifNull: ["$project.raisedAmount", 0] } },
-            status: { $first: { $ifNull: ["$project.status", "draft"] } },
-            fraudScore: { $first: { $ifNull: ["$project.fraudScore", 0] } },
-            flagged: { $first: { $ifNull: ["$project.flagged", false] } },
+          $unwind: {
+            path: "$ngo",
+            preserveNullAndEmptyArrays: true,
           },
         },
-        { $sort: { totalAmount: -1 } },
+        {
+          $addFields: {
+            successfulDonations: {
+              $filter: {
+                input: "$donations",
+                as: "donation",
+                cond: { $eq: ["$$donation.paymentStatus", "SUCCESS"] },
+              },
+            },
+          },
+        },
+        {
+          $addFields: {
+            totalAmount: {
+              $sum: "$successfulDonations.amount",
+            },
+            totalDonations: {
+              $size: "$successfulDonations",
+            },
+            ngoName: {
+              $ifNull: ["$ngo.organizationName", "$ngo.name"],
+            },
+            fraudScore: { $ifNull: ["$fraudScore", 0] },
+            flagged: { $ifNull: ["$flagged", false] },
+            goalAmount: { $ifNull: ["$goalAmount", 0] },
+            raisedAmount: { $ifNull: ["$raisedAmount", 0] },
+            status: { $ifNull: ["$status", "draft"] },
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            projectTitle: "$title",
+            ngoId: "$ngo._id",
+            ngoName: 1,
+            totalAmount: 1,
+            totalDonations: 1,
+            goalAmount: 1,
+            raisedAmount: 1,
+            status: 1,
+            fraudScore: 1,
+            flagged: 1,
+            createdAt: 1,
+          },
+        },
+        { $sort: { createdAt: -1, projectTitle: 1 } },
       ]),
 
       Donation.aggregate([
@@ -397,6 +431,19 @@ exports.getAdminAnalytics = async (req, res) => {
         .populate("admin", "name email")
         .sort({ createdAt: -1 })
         .limit(8),
+
+      NGO.countDocuments(),
+      Project.countDocuments(),
+      Donation.countDocuments({ paymentStatus: "SUCCESS" }),
+      Donation.aggregate([
+        { $match: { paymentStatus: "SUCCESS" } },
+        {
+          $group: {
+            _id: null,
+            totalAmount: { $sum: "$amount" },
+          },
+        },
+      ]),
     ]);
 
     const formattedMonthlyDonationTrends = monthlyDonationTrends.map((item) => ({
@@ -432,7 +479,13 @@ exports.getAdminAnalytics = async (req, res) => {
       }
     });
 
+    const totalDonationAmount = totalDonationAgg?.[0]?.totalAmount || 0;
+
     return res.status(200).json({
+      totalNGOs,
+      totalProjects,
+      totalDonations: totalSuccessfulDonations,
+      totalDonationAmount,
       monthlyDonationTrends: formattedMonthlyDonationTrends,
       ngoFundingBreakdown,
       projectFundingBreakdown,

@@ -18,7 +18,7 @@
   overflow-y: auto;
 }
 
-/* Logo */
+/* ── LOGO ── */
 .sidebar-logo,
 .sidebar-header {
   display: flex;
@@ -59,7 +59,7 @@
   text-transform: uppercase;
 }
 
-/* Section title */
+/* ── SECTION TITLE ── */
 .section-title {
   font-size: 10px;
   font-weight: 700;
@@ -69,9 +69,14 @@
   margin: 16px 0 8px 8px;
 }
 
-.sidebar-section { display: flex; flex-direction: column; gap: 1px; }
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;              /* pushes logout to bottom */
+}
 
-/* Nav links */
+/* ── NAV LINKS ── */
 .sidebar-nav,
 .sidebar-section {
   display: flex;
@@ -122,25 +127,39 @@
   background: var(--green);
 }
 
-/* Logout */
+/* ── LOGOUT ── */
+.logout-wrap {
+  padding-top: 16px;
+  margin-top: auto;
+  border-top: 1px solid var(--border-light);
+}
+
 .logout-btn {
   width: 100%;
-  margin-top: auto;
-  background: var(--bg-white);
-  border: 1px solid var(--border-light);
-  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 16px;
   border-radius: var(--radius-md);
+  background: transparent;
+  border: 1.5px solid var(--border-light);
   color: var(--text-secondary);
   cursor: pointer;
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
-  transition: all 0.15s;
+  transition: all 0.18s;
   text-align: center;
 }
 
 .logout-btn:hover {
-  background: var(--red-light);
-  color: var(--red);
-  border-color: rgba(220, 53, 69, 0.2);
+  background: #fff0f0;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.logout-btn::before {
+  content: '🚪';
+  font-size: 15px;
 }

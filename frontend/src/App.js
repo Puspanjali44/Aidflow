@@ -23,6 +23,7 @@ import AdminSettings from "./pages/AdminSettings";
 import KhaltiReturn from "./pages/KhaltiReturn";
 import MySubscriptions from "./pages/MySubscriptions";
 import "./pages/Admin.css";
+import AdminProjectDetails from "./pages/AdminProjectDetails";
 
 function App() {
   return (
@@ -56,6 +57,7 @@ function App() {
           <Route path="project-approval" element={<ProjectApprovalPage />} />
           <Route path="analytics" element={<AdminAnalytics />} />
           <Route path="settings" element={<AdminSettings />} />
+           <Route path="projects/:id" element={<AdminProjectDetails />} />s
         </Route>
       </Routes>
     </Router>

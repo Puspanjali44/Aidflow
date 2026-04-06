@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { Fragment, useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
 import NgoLayout from "../components/NgoLayout";
+import AdminLayout from "../components/AdminLayout";
 import DonateModal from "./DonateModal";
 import "./ProjectDetails.css";
 
@@ -41,7 +42,15 @@ const scoreLabel = (s) => {
 
 export default function ProjectDetails() {
   const { id } = useParams();
-  const isNGO = getRole() === "ngo";
+  const role = getRole();
+const isNGO = role === "ngo";
+const isAdmin = role === "admin";
+
+const LayoutWrapper = ({ children }) => {
+  if (isNGO) return <NgoLayout>{children}</NgoLayout>;
+  if (isAdmin) return <AdminLayout>{children}</AdminLayout>;
+  return <>{children}</>;
+};
   const heroRef = useRef();
 
   const [project, setProject] = useState(null);
@@ -546,7 +555,7 @@ export default function ProjectDetails() {
     "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=1200&q=80";
 
   return (
-    <NgoLayout>
+    <LayoutWrapper>
       <div className="pd-root">
         {toast && (
           <div className={`pd-toast pd-toast-${toast.type}`}>{toast.msg}</div>
@@ -1258,24 +1267,34 @@ export default function ProjectDetails() {
 
           <aside className="pd-sidebar">
             <div className="pd-sidebar-card">
-              <button
-                className="pd-btn-donate-big"
-                onClick={() => setShowDonate(true)}
-                disabled={remainingToGoal <= 0}
-                title={remainingToGoal <= 0 ? "Goal reached" : "Donate now"}
-              >
-                <HeartIcon /> {remainingToGoal <= 0 ? "Goal Reached" : "Donate Now"}
-              </button>
+              {!isAdmin && (
+                <>
+                  <button
+                    className="pd-btn-donate-big"
+                    onClick={() => setShowDonate(true)}
+                    disabled={remainingToGoal <= 0}
+                    title={remainingToGoal <= 0 ? "Goal reached" : "Donate now"}
+                  >
+                    <HeartIcon /> {remainingToGoal <= 0 ? "Goal Reached" : "Donate Now"}
+                  </button>
 
-              <button
-                className="pd-btn-share-full"
-                onClick={() => {
-                  navigator.clipboard.writeText(window.location.href);
-                  showToast("Link copied!");
-                }}
-              >
-                <ShareIcon /> Share This Project
-              </button>
+                  <button
+                    className="pd-btn-share-full"
+                    onClick={() => {
+                      navigator.clipboard.writeText(window.location.href);
+                      showToast("Link copied!");
+                    }}
+                  >
+                    <ShareIcon /> Share This Project
+                  </button>
+                </>
+              )}
+
+              {isAdmin && (
+                <div className="pd-admin-view-badge">
+                  Admin View
+                </div>
+              )}
             </div>
 
             <div className="pd-sidebar-card">
@@ -1406,7 +1425,7 @@ export default function ProjectDetails() {
           </div>
         )}
 
-        {showDonate && project && (
+        {showDonate && project && !isAdmin && (
           <DonateModal
             project={{
               ...project,
@@ -1425,7 +1444,7 @@ export default function ProjectDetails() {
           />
         )}
       </div>
-    </NgoLayout>
+    </LayoutWrapper>
   );
 }
 

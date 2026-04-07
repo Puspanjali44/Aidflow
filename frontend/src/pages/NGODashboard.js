@@ -1,15 +1,37 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NgoLayout from "../components/NgoLayout";
 import "./NGODashboard.css";
 
 const API = "http://localhost:5000";
 
+function timeAgo(dateString) {
+  if (!dateString) return "Recently";
+
+  const now = new Date();
+  const date = new Date(dateString);
+  const diff = now - date;
+
+  const mins = Math.floor(diff / (1000 * 60));
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins} min ago`;
+  if (hours < 24) return `${hours} hr ago`;
+  return `${days} day${days > 1 ? "s" : ""} ago`;
+}
+
 function NGODashboard() {
   const [profile, setProfile] = useState(null);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [readNotifications, setReadNotifications] = useState([]);
+
   const navigate = useNavigate();
+  const notificationRef = useRef(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -25,6 +47,20 @@ function NGODashboard() {
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
+        setShowNotifications(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const totalRaised = projects.reduce((s, p) => s + (p.raisedAmount || 0), 0);
@@ -58,6 +94,85 @@ function NGODashboard() {
     .sort((a, b) => (b.raisedAmount || 0) - (a.raisedAmount || 0))
     .slice(0, 3);
 
+  const notifications = useMemo(() => {
+    const items = [];
+
+    if (profile?.flagged) {
+      items.push({
+        id: `ngo-flagged-${profile._id || "profile"}`,
+        type: "warning",
+        title: "NGO profile flagged for review",
+        message: profile.flagReason || "Your NGO profile is under admin review.",
+        time: profile.reviewedAt || profile.updatedAt || profile.createdAt,
+        action: "/ngo/settings",
+      });
+    }
+
+    projects.forEach((project) => {
+      if (project.status === "under_review") {
+        items.push({
+          id: `project-review-${project._id}`,
+          type: "info",
+          title: "Project under review",
+          message: `${project.title} is waiting for admin approval.`,
+          time: project.updatedAt || project.createdAt,
+          action: `/projects/${project._id}`,
+        });
+      }
+
+      if (project.status === "rejected") {
+        items.push({
+          id: `project-rejected-${project._id}`,
+          type: "danger",
+          title: "Project rejected",
+          message: `${project.title} was rejected by admin.`,
+          time: project.updatedAt || project.createdAt,
+          action: `/projects/${project._id}`,
+        });
+      }
+
+      if (project.status === "paused") {
+        items.push({
+          id: `project-paused-${project._id}`,
+          type: "warning",
+          title: "Project paused",
+          message: `${project.title} is currently paused.`,
+          time: project.updatedAt || project.createdAt,
+          action: `/projects/${project._id}`,
+        });
+      }
+
+      if (project.status === "completed") {
+        items.push({
+          id: `project-completed-${project._id}`,
+          type: "success",
+          title: "Project completed",
+          message: `${project.title} has reached its goal.`,
+          time: project.updatedAt || project.createdAt,
+          action: `/projects/${project._id}`,
+        });
+      }
+    });
+
+    return items.sort((a, b) => new Date(b.time || 0) - new Date(a.time || 0));
+  }, [profile, projects]);
+
+  const unreadCount = notifications.filter(
+    (n) => !readNotifications.includes(n.id)
+  ).length;
+
+  const markAllAsRead = () => {
+    setReadNotifications(notifications.map((n) => n.id));
+  };
+
+  const openNotification = (notification) => {
+    if (!readNotifications.includes(notification.id)) {
+      setReadNotifications((prev) => [...prev, notification.id]);
+    }
+    setShowNotifications(false);
+    navigate(notification.action);
+  };
+
   if (loading) {
     return (
       <NgoLayout>
@@ -72,9 +187,66 @@ function NGODashboard() {
   return (
     <NgoLayout>
       <div className="dash-page">
-        <div className="page-header">
-          <h1>Dashboard</h1>
-          <p>Welcome back, {profile?.name || "Your NGO"}</p>
+        <div className="page-header page-header-flex">
+          <div>
+            <h1>Dashboard</h1>
+            <p>Welcome back, {profile?.name || "Your NGO"}</p>
+          </div>
+
+          <div className="notification-wrap" ref={notificationRef}>
+            <button
+              className="notification-btn"
+              onClick={() => setShowNotifications((prev) => !prev)}
+            >
+              🔔
+              {unreadCount > 0 && (
+                <span className="notification-badge">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {showNotifications && (
+              <div className="notification-panel">
+                <div className="notification-header">
+                  <h3>Notifications</h3>
+                  {notifications.length > 0 && (
+                    <button
+                      className="mark-read-btn"
+                      onClick={markAllAsRead}
+                    >
+                      Mark all as read
+                    </button>
+                  )}
+                </div>
+
+                {notifications.length === 0 ? (
+                  <div className="notification-empty">
+                    No notifications yet.
+                  </div>
+                ) : (
+                  notifications.map((item) => {
+                    const isRead = readNotifications.includes(item.id);
+
+                    return (
+                      <div
+                        key={item.id}
+                        className={`notification-item ${isRead ? "read" : "unread"} ${item.type}`}
+                        onClick={() => openNotification(item)}
+                      >
+                        <div className="notification-dot" />
+                        <div className="notification-content">
+                          <strong>{item.title}</strong>
+                          <p>{item.message}</p>
+                          <span>{timeAgo(item.time)}</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {profile?.flagged && (

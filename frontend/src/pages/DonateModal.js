@@ -150,10 +150,7 @@ export default function DonateModal({ project, onClose }) {
       const token = localStorage.getItem("token");
       const payload = getPayload();
 
-      const endpoint =
-        donationType === "monthly"
-          ? `${API}/recurring-donations/initiate`
-          : `${API}/payments/khalti/initiate`;
+      const endpoint = `${API}/payments/khalti/initiate`;
 
       const r = await fetch(endpoint, {
         method: "POST",

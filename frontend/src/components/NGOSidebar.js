@@ -16,12 +16,13 @@ function NGOSidebar() {
     { path: "/create-project", label: "Create Project" },
     { path: "/settings", label: "Settings" },
     { path: "/Analytics", label: "Analytics" },
-    
   ];
 
   return (
     <div className="ngo-sidebar">
+      {/* Logo + Brand - Must have logo-box */}
       <div className="sidebar-header">
+        <div className="logo-box"></div>
         <div>
           <h2>AidFlow</h2>
           <p className="portal-text">NGO Portal</p>
@@ -29,10 +30,16 @@ function NGOSidebar() {
       </div>
 
       <div className="sidebar-section">
-        <p className="section-title">Navigation</p>
+        <p className="section-title">NAVIGATION</p>
 
         {navItems.map(({ path, label }) => (
-          <NavLink key={path} to={path} className="nav-item">
+          <NavLink
+            key={path}
+            to={path}
+            className={({ isActive }) => 
+              isActive ? "nav-item active" : "nav-item"
+            }
+          >
             {label}
           </NavLink>
         ))}

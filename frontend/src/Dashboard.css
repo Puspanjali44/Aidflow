@@ -444,3 +444,51 @@
   .dash-sidebar-col { flex-direction: column; }
   .badges-grid { grid-template-columns: repeat(3, 1fr); }
 }
+
+.dash-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notification-btn {
+  position: relative;
+  border: none;
+  background: white;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: red;
+  color: white;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+
+.notification-panel {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  width: 320px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.notification-item {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+
+.notification-item.unread {
+  background: #f0f8ff;
+}

@@ -637,17 +637,7 @@ const LayoutWrapper = ({ children }) => {
                     placeholder="Describe the project…"
                   />
 
-                  <label>Goal Amount (₹)</label>
-                  <input
-                    type="number"
-                    value={projectEdit.goalAmount}
-                    onChange={(e) =>
-                      setProjectEdit({
-                        ...projectEdit,
-                        goalAmount: e.target.value,
-                      })
-                    }
-                  />
+                  
 
                   <div className="pd-edit-actions">
                     <button className="pd-btn-primary" onClick={saveProjectEdit}>

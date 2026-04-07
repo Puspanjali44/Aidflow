@@ -34,6 +34,23 @@ const projectSchema = new mongoose.Schema(
       required: true,
     },
 
+    // ================= LOCATION =================
+    location: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    lat: {
+      type: Number,
+      default: null,
+    },
+
+    lng: {
+      type: Number,
+      default: null,
+    },
+
     // ================= STATUS =================
     status: {
       type: String,

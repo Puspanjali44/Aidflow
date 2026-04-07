@@ -367,7 +367,7 @@ export default function DonateModal({ project, onClose }) {
                 )}
 
                 <div className="dm-payment-icons">
-                  <button
+                  {/* <button
                     type="button"
                     className={`dm-pay-chip esewa ${
                       paymentMethod === "esewa" ? "active" : ""
@@ -375,7 +375,7 @@ export default function DonateModal({ project, onClose }) {
                     onClick={() => setPaymentMethod("esewa")}
                   >
                     eSewa
-                  </button>
+                  </button> */}
 
                   <button
                     type="button"
@@ -387,7 +387,7 @@ export default function DonateModal({ project, onClose }) {
                     Khalti
                   </button>
 
-                  <button
+                  {/* <button
                     type="button"
                     className={`dm-pay-chip ${
                       paymentMethod === "visa" ? "active" : ""
@@ -395,9 +395,9 @@ export default function DonateModal({ project, onClose }) {
                     onClick={() => setPaymentMethod("visa")}
                   >
                     VISA
-                  </button>
+                  </button> */}
 
-                  <button
+                  {/* <button
                     type="button"
                     className={`dm-pay-chip ${
                       paymentMethod === "mc" ? "active" : ""
@@ -405,7 +405,7 @@ export default function DonateModal({ project, onClose }) {
                     onClick={() => setPaymentMethod("mc")}
                   >
                     MC
-                  </button>
+                  </button> */}
                 </div>
 
                 <button

@@ -210,6 +210,72 @@ exports.updateProject = async (req, res) => {
   }
 };
 
+// ================= UPDATE PROJECT LOCATION =================
+exports.updateProjectLocation = async (req, res) => {
+  try {
+    const ngoProfile = await NGO.findOne({ user: req.user._id });
+
+    if (!ngoProfile) {
+      return res.status(404).json({ message: "NGO profile not found" });
+    }
+
+    const project = await Project.findById(req.params.id);
+
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    if (project.ngo.toString() !== ngoProfile._id.toString()) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+
+    const { location, lat, lng } = req.body;
+
+    if (location !== undefined) {
+      project.location = location;
+    }
+
+    if (lat !== undefined) {
+      if (lat === null || lat === "") {
+        project.lat = null;
+      } else {
+        const parsedLat = Number(lat);
+        if (Number.isNaN(parsedLat) || parsedLat < -90 || parsedLat > 90) {
+          return res.status(400).json({ message: "Invalid latitude value" });
+        }
+        project.lat = parsedLat;
+      }
+    }
+
+    if (lng !== undefined) {
+      if (lng === null || lng === "") {
+        project.lng = null;
+      } else {
+        const parsedLng = Number(lng);
+        if (Number.isNaN(parsedLng) || parsedLng < -180 || parsedLng > 180) {
+          return res.status(400).json({ message: "Invalid longitude value" });
+        }
+        project.lng = parsedLng;
+      }
+    }
+
+    await project.save();
+
+    const populatedProject = await Project.findById(project._id).populate(
+      "ngo",
+      "name organizationName category verified verificationStatus"
+    );
+
+    return res.json({
+      message: "Project location updated successfully",
+      project: populatedProject,
+    });
+  } catch (error) {
+    console.error("UPDATE PROJECT LOCATION ERROR:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 // ================= DELETE PROJECT =================
 exports.deleteProject = async (req, res) => {
   try {

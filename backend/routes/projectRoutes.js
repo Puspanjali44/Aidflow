@@ -10,6 +10,7 @@ const {
   getMyProjects,
   submitForReview,
   updateProject,
+  updateProjectLocation,
   deleteProject,
   pauseProject,
   resumeProject,
@@ -58,6 +59,9 @@ router.put(
     }
   }
 );
+
+// ADD THIS ROUTE
+router.put("/:id/location", protect, authorizeRoles("ngo"), updateProjectLocation);
 
 router.put("/:id", protect, authorizeRoles("ngo"), updateProject);
 router.delete("/:id", protect, authorizeRoles("ngo"), deleteProject);

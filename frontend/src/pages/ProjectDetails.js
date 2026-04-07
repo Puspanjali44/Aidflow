@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
 import NgoLayout from "../components/NgoLayout";
 import AdminLayout from "../components/AdminLayout";
@@ -40,17 +40,27 @@ const scoreLabel = (s) => {
   return "Low Transparency";
 };
 
+async function safeJson(response) {
+  const text = await response.text();
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    return { message: text || "Server returned invalid response" };
+  }
+}
+
 export default function ProjectDetails() {
   const { id } = useParams();
   const role = getRole();
-const isNGO = role === "ngo";
-const isAdmin = role === "admin";
+  const isNGO = role === "ngo";
+  const isAdmin = role === "admin";
 
-const LayoutWrapper = ({ children }) => {
-  if (isNGO) return <NgoLayout>{children}</NgoLayout>;
-  if (isAdmin) return <AdminLayout>{children}</AdminLayout>;
-  return <>{children}</>;
-};
+  const LayoutWrapper = ({ children }) => {
+    if (isNGO) return <NgoLayout>{children}</NgoLayout>;
+    if (isAdmin) return <AdminLayout>{children}</AdminLayout>;
+    return <>{children}</>;
+  };
+
   const heroRef = useRef();
 
   const [project, setProject] = useState(null);
@@ -113,19 +123,20 @@ const LayoutWrapper = ({ children }) => {
   const fetchProject = useCallback(async () => {
     try {
       const r = await fetch(`${API}/projects/${id}`);
-      if (!r.ok) throw new Error();
+      if (!r.ok) throw new Error("Failed to fetch project");
+
       const d = await r.json();
 
       setProject(d);
       setProjectEdit({
-        title: d.title,
-        description: d.description,
-        goalAmount: d.goalAmount,
+        title: d.title || "",
+        description: d.description || "",
+        goalAmount: d.goalAmount || "",
       });
       setLocationForm({
         location: d.location || "",
-        lat: d.lat || "",
-        lng: d.lng || "",
+        lat: d.lat ?? "",
+        lng: d.lng ?? "",
       });
     } catch {
       setProject(null);
@@ -232,7 +243,8 @@ const LayoutWrapper = ({ children }) => {
         }),
       });
 
-      if (!r.ok) throw new Error((await r.json()).message || "Failed");
+      const data = await safeJson(r);
+      if (!r.ok) throw new Error(data.message || "Failed");
 
       setEditingProject(false);
       fetchProject();
@@ -262,7 +274,8 @@ const LayoutWrapper = ({ children }) => {
         body: fd,
       });
 
-      if (!r.ok) throw new Error((await r.json()).message || "Failed");
+      const data = await safeJson(r);
+      if (!r.ok) throw new Error(data.message || "Failed");
 
       setHeroFile(null);
       setHeroPreview(null);
@@ -299,7 +312,8 @@ const LayoutWrapper = ({ children }) => {
         body: fd,
       });
 
-      if (!r.ok) throw new Error((await r.json()).message || "Failed");
+      const data = await safeJson(r);
+      if (!r.ok) throw new Error(data.message || "Failed");
 
       resetUpdateForm();
       fetchUpdates();
@@ -331,7 +345,8 @@ const LayoutWrapper = ({ children }) => {
         }),
       });
 
-      if (!r.ok) throw new Error((await r.json()).message || "Failed");
+      const data = await safeJson(r);
+      if (!r.ok) throw new Error(data.message || "Failed");
 
       setTimelineForm({ label: "", date: "", done: false });
       setShowTimelineForm(false);
@@ -344,6 +359,26 @@ const LayoutWrapper = ({ children }) => {
 
   const handleLocationSave = async () => {
     try {
+      const lat =
+        locationForm.lat !== "" && locationForm.lat !== null
+          ? Number(locationForm.lat)
+          : null;
+
+      const lng =
+        locationForm.lng !== "" && locationForm.lng !== null
+          ? Number(locationForm.lng)
+          : null;
+
+      if (lat !== null && Number.isNaN(lat)) {
+        showToast("Latitude is invalid", "error");
+        return;
+      }
+
+      if (lng !== null && Number.isNaN(lng)) {
+        showToast("Longitude is invalid", "error");
+        return;
+      }
+
       const r = await fetch(`${API}/projects/${id}/location`, {
         method: "PUT",
         headers: {
@@ -352,14 +387,19 @@ const LayoutWrapper = ({ children }) => {
         },
         body: JSON.stringify({
           location: locationForm.location,
-          lat: locationForm.lat !== "" ? Number(locationForm.lat) : null,
-          lng: locationForm.lng !== "" ? Number(locationForm.lng) : null,
+          lat,
+          lng,
         }),
       });
 
-      if (!r.ok) throw new Error((await r.json()).message || "Failed");
+      const data = await safeJson(r);
 
-      fetchProject();
+      if (!r.ok) {
+        console.error("Location save failed:", data);
+        throw new Error(data.message || "Failed to save location");
+      }
+
+      await fetchProject();
       showToast("Project location updated!");
     } catch (e) {
       showToast(e.message || "Error saving location", "error");
@@ -386,7 +426,8 @@ const LayoutWrapper = ({ children }) => {
         body: fd,
       });
 
-      if (!r.ok) throw new Error((await r.json()).message || "Failed");
+      const data = await safeJson(r);
+      if (!r.ok) throw new Error(data.message || "Failed");
 
       setImpactForm({
         beneficiaries: "",
@@ -412,7 +453,8 @@ const LayoutWrapper = ({ children }) => {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
 
-      if (!r.ok) throw new Error((await r.json()).message || "Failed");
+      const data = await safeJson(r);
+      if (!r.ok) throw new Error(data.message || "Failed");
 
       fetchUpdates();
       fetchTransparency();
@@ -554,6 +596,34 @@ const LayoutWrapper = ({ children }) => {
     (project.image ? imgUrl(project.image) : null) ||
     "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=1200&q=80";
 
+  const latNum =
+    project.lat !== null && project.lat !== undefined && project.lat !== ""
+      ? Number(project.lat)
+      : null;
+
+  const lngNum =
+    project.lng !== null && project.lng !== undefined && project.lng !== ""
+      ? Number(project.lng)
+      : null;
+
+  const hasCoordinates =
+    latNum !== null &&
+    lngNum !== null &&
+    !Number.isNaN(latNum) &&
+    !Number.isNaN(lngNum);
+
+  const openStreetMapUrl = hasCoordinates
+    ? `https://www.openstreetmap.org/?mlat=${latNum}&mlon=${lngNum}#map=16/${latNum}/${lngNum}`
+    : project.location
+    ? `https://www.openstreetmap.org/search?query=${encodeURIComponent(project.location)}`
+    : "https://www.openstreetmap.org";
+
+  const embedUrl = hasCoordinates
+    ? `https://www.openstreetmap.org/export/embed.html?bbox=${
+        lngNum - 0.01
+      },${latNum - 0.01},${lngNum + 0.01},${latNum + 0.01}&layer=mapnik&marker=${latNum},${lngNum}`
+    : null;
+
   return (
     <LayoutWrapper>
       <div className="pd-root">
@@ -636,8 +706,6 @@ const LayoutWrapper = ({ children }) => {
                     }
                     placeholder="Describe the project…"
                   />
-
-                  
 
                   <div className="pd-edit-actions">
                     <button className="pd-btn-primary" onClick={saveProjectEdit}>
@@ -1056,24 +1124,17 @@ const LayoutWrapper = ({ children }) => {
                   <div className="pd-map-topbar">
                     <button
                       className="pd-btn-map-open"
-                      onClick={() =>
-                        window.open(
-                          `https://maps.google.com/?q=${encodeURIComponent(
-                            project.location || ""
-                          )}`,
-                          "_blank"
-                        )
-                      }
+                      onClick={() => window.open(openStreetMapUrl, "_blank")}
                     >
-                      🔗 Open in Maps
+                      🔗 Open in OpenStreetMap
                     </button>
                   </div>
 
-                  {project.lat && project.lng ? (
+                  {hasCoordinates ? (
                     <iframe
-                      title="map"
+                      title="OpenStreetMap"
                       className="pd-map-iframe"
-                      src={`https://maps.google.com/maps?q=${project.lat},${project.lng}&z=15&output=embed`}
+                      src={embedUrl}
                       allowFullScreen
                     />
                   ) : (
@@ -1083,19 +1144,14 @@ const LayoutWrapper = ({ children }) => {
                   )}
 
                   <div className="pd-map-footer">
-                    <span>📍 {project.location || "Location not provided"}</span>
+                    <span>
+                      📍 {project.location || locationForm.location || "Location not provided"}
+                    </span>
                     <button
                       className="pd-btn-text"
-                      onClick={() =>
-                        window.open(
-                          `https://maps.google.com/?q=${encodeURIComponent(
-                            project.location || ""
-                          )}`,
-                          "_blank"
-                        )
-                      }
+                      onClick={() => window.open(openStreetMapUrl, "_blank")}
                     >
-                      Open in Maps ↗
+                      Open in OpenStreetMap ↗
                     </button>
                   </div>
                 </div>
@@ -1280,11 +1336,7 @@ const LayoutWrapper = ({ children }) => {
                 </>
               )}
 
-              {isAdmin && (
-                <div className="pd-admin-view-badge">
-                  Admin View
-                </div>
-              )}
+              {isAdmin && <div className="pd-admin-view-badge">Admin View</div>}
             </div>
 
             <div className="pd-sidebar-card">

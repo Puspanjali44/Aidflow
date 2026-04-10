@@ -39,6 +39,7 @@ app.use("/api/recurring-donations", recurringDonationRoutes);
 // Static Uploads Folder
 // ======================
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static("uploads"));
 
 // ======================
 // Default Route

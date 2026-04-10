@@ -20,12 +20,15 @@ const {
   getFlaggedProjects,
   getPublicProjects,
   getProjectById,
+  uploadImpactReport,
+  getImpactReport,
 } = require("../controllers/project.controller");
 
 const Project = require("../models/Project");
 
 // ================= PUBLIC ROUTES =================
 router.get("/public", getPublicProjects);
+router.get("/:id/impact", getImpactReport);
 
 // ================= NGO ROUTES =================
 router.post("/", protect, authorizeRoles("ngo"), createProject);
@@ -60,8 +63,18 @@ router.put(
   }
 );
 
-// ADD THIS ROUTE
 router.put("/:id/location", protect, authorizeRoles("ngo"), updateProjectLocation);
+
+router.post(
+  "/:id/impact",
+  protect,
+  authorizeRoles("ngo"),
+  upload.fields([
+    { name: "pdf", maxCount: 1 },
+    { name: "photos", maxCount: 10 },
+  ]),
+  uploadImpactReport
+);
 
 router.put("/:id", protect, authorizeRoles("ngo"), updateProject);
 router.delete("/:id", protect, authorizeRoles("ngo"), deleteProject);

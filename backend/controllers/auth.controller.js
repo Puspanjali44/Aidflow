@@ -8,13 +8,10 @@ exports.register = async (req, res) => {
   try {
     const { name, email, password, role, registrationNumber } = req.body;
 
-    // Basic validation
     if (!name || !email || !password) {
       return res.status(400).json({ message: "All fields required" });
     }
 
-    // Allow only donor or ngo from public registration
-    // If role is missing, default to donor
     const safeRole = role || "donor";
     const allowedRoles = ["donor", "ngo"];
 
@@ -22,16 +19,13 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "Only donor or ngo can register" });
     }
 
-    // Check if user already exists
     const userExists = await User.findOne({ email: email.toLowerCase().trim() });
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user safely
     const user = await User.create({
       name: name.trim(),
       email: email.toLowerCase().trim(),
@@ -39,7 +33,6 @@ exports.register = async (req, res) => {
       role: safeRole,
     });
 
-    // If NGO -> create NGO profile automatically
     if (user.role === "ngo") {
       await NGO.create({
         user: user._id,
@@ -74,7 +67,6 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Email and password required" });
     }
 
-    // Include password field explicitly
     const user = await User.findOne({
       email: email.toLowerCase().trim(),
     }).select("+password");
@@ -83,14 +75,12 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    // Generate token
     const token = jwt.sign(
       {
         id: user._id,
@@ -114,5 +104,26 @@ exports.login = async (req, res) => {
   } catch (error) {
     console.log("LOGIN ERROR:", error);
     return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ================= GET ME =================
+exports.getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
+  } catch (error) {
+    console.log("GET ME ERROR:", error);
+    return res.status(500).json({ message: "Failed to fetch user" });
   }
 };

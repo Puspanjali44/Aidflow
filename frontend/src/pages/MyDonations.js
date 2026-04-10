@@ -28,6 +28,29 @@ function MyDonations() {
     }
   };
 
+  const handleDownloadReceipt = async (e, receiptUrl) => {
+    e.stopPropagation();
+
+    try {
+      const response = await fetch(`http://localhost:5000${receiptUrl}`);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = "AidFlow-Receipt.pdf";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      setTimeout(() => {
+        window.URL.revokeObjectURL(blobUrl);
+      }, 1000);
+    } catch (error) {
+      console.error("Download failed:", error);
+    }
+  };
+
   const totalDonated = donations.reduce(
     (sum, donation) => sum + donation.amount,
     0
@@ -49,7 +72,6 @@ function MyDonations() {
         <h1 className="mydon-title">My Donations</h1>
         <p className="mydon-subtitle">View and manage all your contributions.</p>
 
-        {/* Total */}
         <div className="mydon-stats">
           <div className="mydon-stat green-stat">
             <div className="mydon-stat-label">TOTAL DONATED</div>
@@ -62,7 +84,6 @@ function MyDonations() {
           </div>
         </div>
 
-        {/* Donation List */}
         <div className="mydon-list-section">
           <h3>All Donations</h3>
 
@@ -75,16 +96,13 @@ function MyDonations() {
               <div
                 key={donation._id}
                 className="mydon-row"
-                onClick={() =>
-                  navigate(`/project/${donation.project?._id}`)
-                }
+                onClick={() => navigate(`/project/${donation.project?._id}`)}
                 style={{
                   cursor: "pointer",
                   animation: "slideUp 0.4s ease both",
                   animationDelay: `${index * 0.05}s`,
                 }}
               >
-                {/* Avatar */}
                 <div
                   className="mydon-avatar"
                   style={{
@@ -96,7 +114,6 @@ function MyDonations() {
                   {getInitial(donation.project?.ngo?.organizationName)}
                 </div>
 
-                {/* Info */}
                 <div className="mydon-info">
                   <div className="mydon-info-title">
                     {donation.project?.title || "(No project)"}
@@ -106,17 +123,43 @@ function MyDonations() {
                   </div>
                 </div>
 
-                {/* Right */}
                 <div className="mydon-right">
                   <div className="mydon-amount">
                     NPR {donation.amount?.toLocaleString()}
                   </div>
+
                   <div className="mydon-date-status">
                     <span className="mydon-date">
                       {new Date(donation.createdAt).toLocaleDateString()}
                     </span>
                     <span className="mydon-status completed">completed</span>
                   </div>
+
+                  {donation.receiptUrl && (
+                    <div
+                      className="mydon-receipt-actions"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <a
+                        href={`http://localhost:5000${donation.receiptUrl}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mydon-receipt-btn mydon-receipt-view"
+                      >
+                        View Receipt
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={(e) =>
+                          handleDownloadReceipt(e, donation.receiptUrl)
+                        }
+                        className="mydon-receipt-btn mydon-receipt-download"
+                      >
+                        Download Receipt
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))

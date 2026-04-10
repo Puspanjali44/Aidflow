@@ -158,14 +158,14 @@ function NgoProjects() {
 
                     {(project.status === "active" || project.status === "paused") && (
                       <>
-                        <button 
+                        {/* <button 
                           className="action-btn"
                           onClick={() => handleEdit(project._id)}
                         >
                           Edit
-                        </button>
+                        </button> */}
 
-                        {project.status === "active" ? (
+                        {/* {project.status === "active" ? (
                           <button 
                             className="action-btn pause-btn"
                             onClick={() => handlePause(project._id)}
@@ -179,7 +179,7 @@ function NgoProjects() {
                           >
                             Resume
                           </button>
-                        )}
+                        )} */}
                       </>
                     )}
 

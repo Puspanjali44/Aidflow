@@ -55,12 +55,6 @@ export default function ProjectDetails() {
   const isNGO = role === "ngo";
   const isAdmin = role === "admin";
 
-  const LayoutWrapper = ({ children }) => {
-    if (isNGO) return <NgoLayout>{children}</NgoLayout>;
-    if (isAdmin) return <AdminLayout>{children}</AdminLayout>;
-    return <>{children}</>;
-  };
-
   const heroRef = useRef();
 
   const [project, setProject] = useState(null);
@@ -624,870 +618,872 @@ export default function ProjectDetails() {
       },${latNum - 0.01},${lngNum + 0.01},${latNum + 0.01}&layer=mapnik&marker=${latNum},${lngNum}`
     : null;
 
-  return (
-    <LayoutWrapper>
-      <div className="pd-root">
-        {toast && (
-          <div className={`pd-toast pd-toast-${toast.type}`}>{toast.msg}</div>
+  const pageContent = (
+    <div className="pd-root">
+      {toast && (
+        <div className={`pd-toast pd-toast-${toast.type}`}>{toast.msg}</div>
+      )}
+
+      <div className="pd-hero-wrap">
+        <img className="pd-hero" src={heroSrc} alt={project.title} />
+        <div className="pd-hero-overlay" />
+
+        {isNGO && (
+          <>
+            <button
+              className="pd-hero-change-btn"
+              onClick={() => heroRef.current?.click()}
+            >
+              <CameraIcon /> Change Cover Photo
+            </button>
+            <input
+              ref={heroRef}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={handleHeroPick}
+            />
+          </>
         )}
 
-        <div className="pd-hero-wrap">
-          <img className="pd-hero" src={heroSrc} alt={project.title} />
-          <div className="pd-hero-overlay" />
-
-          {isNGO && (
-            <>
+        {heroPreview && (
+          <div className="pd-hero-save-bar">
+            <span>New cover photo selected — save to apply</span>
+            <div style={{ display: "flex", gap: 8 }}>
               <button
-                className="pd-hero-change-btn"
-                onClick={() => heroRef.current?.click()}
+                className="pd-hero-save-confirm"
+                onClick={saveHeroOnly}
               >
-                <CameraIcon /> Change Cover Photo
+                Save Photo
               </button>
-              <input
-                ref={heroRef}
-                type="file"
-                accept="image/*"
-                style={{ display: "none" }}
-                onChange={handleHeroPick}
-              />
-            </>
-          )}
+              <button
+                className="pd-hero-save-cancel"
+                onClick={() => {
+                  setHeroPreview(null);
+                  setHeroFile(null);
+                }}
+              >
+                Discard
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
-          {heroPreview && (
-            <div className="pd-hero-save-bar">
-              <span>New cover photo selected — save to apply</span>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  className="pd-hero-save-confirm"
-                  onClick={saveHeroOnly}
-                >
-                  Save Photo
-                </button>
-                <button
-                  className="pd-hero-save-cancel"
-                  onClick={() => {
-                    setHeroPreview(null);
-                    setHeroFile(null);
-                  }}
-                >
-                  Discard
-                </button>
+      <div className="pd-body">
+        <div className="pd-left">
+          <section className="pd-title-block">
+            {editingProject ? (
+              <div className="pd-edit-project-form">
+                <label>Project Title</label>
+                <input
+                  value={projectEdit.title}
+                  onChange={(e) =>
+                    setProjectEdit({
+                      ...projectEdit,
+                      title: e.target.value,
+                    })
+                  }
+                  placeholder="Project title"
+                />
+
+                <label>Description</label>
+                <textarea
+                  rows={4}
+                  value={projectEdit.description}
+                  onChange={(e) =>
+                    setProjectEdit({
+                      ...projectEdit,
+                      description: e.target.value,
+                    })
+                  }
+                  placeholder="Describe the project…"
+                />
+
+                <div className="pd-edit-actions">
+                  <button className="pd-btn-primary" onClick={saveProjectEdit}>
+                    💾 Save Changes
+                  </button>
+                  <button
+                    className="pd-btn-ghost"
+                    onClick={() => {
+                      setEditingProject(false);
+                      setHeroPreview(null);
+                      setHeroFile(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <h1 className="pd-title">{project.title}</h1>
+                <p className="pd-desc">{project.description}</p>
+                {isNGO && (
+                  <button
+                    className="pd-btn-outline"
+                    onClick={() => setEditingProject(true)}
+                  >
+                    ✏️ Edit Project
+                  </button>
+                )}
+              </>
+            )}
+          </section>
+
+          {(project.adminVerified ||
+            project.docsApproved ||
+            project.bankVerified) && (
+            <div className="pd-verified">
+              <div className="pd-verified-top">
+                <span>🛡️</span>
+                <strong className="pd-verified-text">
+                  ✓ Verified Organization
+                </strong>
+              </div>
+              <div className="pd-badges">
+                {project.adminVerified && (
+                  <span className="pd-badge">✅ Admin Verified</span>
+                )}
+                {project.docsApproved && (
+                  <span className="pd-badge">✅ Documents Approved</span>
+                )}
+                {project.bankVerified && (
+                  <span className="pd-badge">🏦 Bank Account Verified</span>
+                )}
               </div>
             </div>
           )}
-        </div>
 
-        <div className="pd-body">
-          <div className="pd-left">
-            <section className="pd-title-block">
-              {editingProject ? (
-                <div className="pd-edit-project-form">
-                  <label>Project Title</label>
+          <section className="pd-fund-card">
+            <h2 className="pd-section-title">Real-Time Fund Tracking</h2>
+
+            <div className="pd-fund-numbers">
+              <span className="pd-raised">₹{fmt(realRaisedAmount)} raised</span>
+              <span className="pd-goal">₹{fmt(goalAmount)} goal</span>
+            </div>
+
+            <div className="pd-progress-track">
+              <div
+                className="pd-progress-fill"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+
+            <p className="pd-progress-pct">{Math.round(progress)}% Complete</p>
+
+            <div className="pd-stats-row">
+              <StatChip
+                icon="📈"
+                label="Amount Raised"
+                value={`₹${fmt(realRaisedAmount)}`}
+              />
+              <StatChip
+                icon="🎯"
+                label="Goal"
+                value={`₹${fmt(goalAmount)}`}
+              />
+              <StatChip
+                icon="💰"
+                label="Remaining to Goal"
+                value={`₹${fmt(remainingToGoal)}`}
+              />
+              <StatChip
+                icon="👥"
+                label="Donors"
+                value={realDonorCount}
+              />
+            </div>
+          </section>
+
+          <section className="pd-approval-card">
+            <h2 className="pd-section-title">Admin Approval Status</h2>
+            <ApprovalStepper
+              status={project.status || "draft"}
+              message={project.statusMessage}
+            />
+          </section>
+
+          <div className="pd-tabs">
+            {[
+              { key: "updates", label: "Project Updates", count: updates.length },
+              { key: "timeline", label: "Project Timeline" },
+              { key: "location", label: "Project Location" },
+              { key: "impact", label: "Impact Report" },
+              {
+                key: "words",
+                label: "Words of Support",
+                count: wordsSupport.length,
+              },
+            ].map((t) => (
+              <button
+                key={t.key}
+                className={`pd-tab ${activeTab === t.key ? "active" : ""}`}
+                onClick={() => setActiveTab(t.key)}
+              >
+                {t.label}
+                {t.count > 0 && <span className="pd-tab-badge">{t.count}</span>}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === "updates" && (
+            <section className="pd-tab-panel">
+              {isNGO && !showUpdateForm && (
+                <button
+                  className="pd-btn-primary pd-mb16"
+                  onClick={() => {
+                    resetUpdateForm();
+                    setShowUpdateForm(true);
+                  }}
+                >
+                  + Add Update
+                </button>
+              )}
+
+              {showUpdateForm && (
+                <div className="pd-update-form">
+                  <h3>{editingUpdateId ? "✏️ Edit Update" : "📝 New Update"}</h3>
+
+                  <label>Title *</label>
                   <input
-                    value={projectEdit.title}
+                    placeholder="e.g. Foundation Completed"
+                    value={updateForm.title}
                     onChange={(e) =>
-                      setProjectEdit({
-                        ...projectEdit,
-                        title: e.target.value,
-                      })
+                      setUpdateForm({ ...updateForm, title: e.target.value })
                     }
-                    placeholder="Project title"
                   />
 
                   <label>Description</label>
                   <textarea
                     rows={4}
-                    value={projectEdit.description}
+                    placeholder="What was accomplished…"
+                    value={updateForm.description}
                     onChange={(e) =>
-                      setProjectEdit({
-                        ...projectEdit,
+                      setUpdateForm({
+                        ...updateForm,
                         description: e.target.value,
                       })
                     }
-                    placeholder="Describe the project…"
                   />
 
-                  <div className="pd-edit-actions">
-                    <button className="pd-btn-primary" onClick={saveProjectEdit}>
-                      💾 Save Changes
+                  <div className="pd-form-row">
+                    <div>
+                      <label>Expense Used (₹)</label>
+                      <input
+                        type="number"
+                        placeholder="0"
+                        value={updateForm.expenseUsed}
+                        onChange={(e) =>
+                          setUpdateForm({
+                            ...updateForm,
+                            expenseUsed: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label>Category</label>
+                      <select
+                        value={updateForm.expenseCategory}
+                        onChange={(e) =>
+                          setUpdateForm({
+                            ...updateForm,
+                            expenseCategory: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="">Select Category</option>
+                        <option>Materials</option>
+                        <option>Labor</option>
+                        <option>Transport</option>
+                        <option>Equipment</option>
+                        <option>Medical</option>
+                        <option>Other</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <label>Photos (up to 5)</label>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={(e) =>
+                      setUpdateForm({
+                        ...updateForm,
+                        photos: Array.from(e.target.files || []),
+                      })
+                    }
+                  />
+
+                  {updateForm.photos.length > 0 && (
+                    <div className="pd-photo-preview-row">
+                      {updateForm.photos.map((f, i) => (
+                        <img
+                          key={i}
+                          src={URL.createObjectURL(f)}
+                          alt=""
+                          className="pd-photo-thumb"
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="pd-form-actions">
+                    <button
+                      className="pd-btn-primary"
+                      onClick={handleUpdateSubmit}
+                    >
+                      {editingUpdateId ? "💾 Save Changes" : "🚀 Submit Update"}
+                    </button>
+                    <button className="pd-btn-ghost" onClick={resetUpdateForm}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="pd-updates-list">
+                {updates.length === 0 && (
+                  <p className="pd-empty">No updates posted yet.</p>
+                )}
+                {updates.map((u) => (
+                  <UpdateCard
+                    key={u._id}
+                    update={u}
+                    isNGO={isNGO}
+                    onEdit={startEditUpdate}
+                    onDelete={deleteUpdate}
+                    onOpenPhoto={(photos, idx) => setImgModal({ photos, idx })}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {activeTab === "timeline" && (
+            <section className="pd-tab-panel">
+              {isNGO && !showTimelineForm && (
+                <button
+                  className="pd-btn-primary pd-mb16"
+                  onClick={() => setShowTimelineForm(true)}
+                >
+                  + Add Timeline
+                </button>
+              )}
+
+              {isNGO && showTimelineForm && (
+                <div className="pd-update-form">
+                  <h3>🗓️ New Timeline Item</h3>
+
+                  <label>Label *</label>
+                  <input
+                    placeholder="e.g. Materials Purchased"
+                    value={timelineForm.label}
+                    onChange={(e) =>
+                      setTimelineForm({ ...timelineForm, label: e.target.value })
+                    }
+                  />
+
+                  <label>Date</label>
+                  <input
+                    type="date"
+                    value={timelineForm.date}
+                    onChange={(e) =>
+                      setTimelineForm({ ...timelineForm, date: e.target.value })
+                    }
+                  />
+
+                  <label className="pd-checkbox-row">
+                    <input
+                      type="checkbox"
+                      checked={timelineForm.done}
+                      onChange={(e) =>
+                        setTimelineForm({
+                          ...timelineForm,
+                          done: e.target.checked,
+                        })
+                      }
+                    />
+                    <span>Mark as completed</span>
+                  </label>
+
+                  <div className="pd-form-actions">
+                    <button
+                      className="pd-btn-primary"
+                      onClick={handleTimelineSubmit}
+                    >
+                      Save Timeline
                     </button>
                     <button
                       className="pd-btn-ghost"
                       onClick={() => {
-                        setEditingProject(false);
-                        setHeroPreview(null);
-                        setHeroFile(null);
+                        setShowTimelineForm(false);
+                        setTimelineForm({ label: "", date: "", done: false });
                       }}
                     >
                       Cancel
                     </button>
                   </div>
                 </div>
-              ) : (
-                <>
-                  <h1 className="pd-title">{project.title}</h1>
-                  <p className="pd-desc">{project.description}</p>
-                  {isNGO && (
-                    <button
-                      className="pd-btn-outline"
-                      onClick={() => setEditingProject(true)}
-                    >
-                      ✏️ Edit Project
-                    </button>
-                  )}
-                </>
               )}
-            </section>
 
-            {(project.adminVerified ||
-              project.docsApproved ||
-              project.bankVerified) && (
-              <div className="pd-verified">
-                <div className="pd-verified-top">
-                  <span>🛡️</span>
-                  <strong className="pd-verified-text">
-                    ✓ Verified Organization
-                  </strong>
-                </div>
-                <div className="pd-badges">
-                  {project.adminVerified && (
-                    <span className="pd-badge">✅ Admin Verified</span>
-                  )}
-                  {project.docsApproved && (
-                    <span className="pd-badge">✅ Documents Approved</span>
-                  )}
-                  {project.bankVerified && (
-                    <span className="pd-badge">🏦 Bank Account Verified</span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <section className="pd-fund-card">
-              <h2 className="pd-section-title">Real-Time Fund Tracking</h2>
-
-              <div className="pd-fund-numbers">
-                <span className="pd-raised">₹{fmt(realRaisedAmount)} raised</span>
-                <span className="pd-goal">₹{fmt(goalAmount)} goal</span>
-              </div>
-
-              <div className="pd-progress-track">
-                <div
-                  className="pd-progress-fill"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-
-              <p className="pd-progress-pct">{Math.round(progress)}% Complete</p>
-
-              <div className="pd-stats-row">
-                <StatChip
-                  icon="📈"
-                  label="Amount Raised"
-                  value={`₹${fmt(realRaisedAmount)}`}
-                />
-                <StatChip
-                  icon="🎯"
-                  label="Goal"
-                  value={`₹${fmt(goalAmount)}`}
-                />
-                <StatChip
-                  icon="💰"
-                  label="Remaining to Goal"
-                  value={`₹${fmt(remainingToGoal)}`}
-                />
-                <StatChip
-                  icon="👥"
-                  label="Donors"
-                  value={realDonorCount}
-                />
-              </div>
-            </section>
-
-            <section className="pd-approval-card">
-              <h2 className="pd-section-title">Admin Approval Status</h2>
-              <ApprovalStepper
-                status={project.status || "draft"}
-                message={project.statusMessage}
-              />
-            </section>
-
-            <div className="pd-tabs">
-              {[
-                { key: "updates", label: "Project Updates", count: updates.length },
-                { key: "timeline", label: "Project Timeline" },
-                { key: "location", label: "Project Location" },
-                { key: "impact", label: "Impact Report" },
-                {
-                  key: "words",
-                  label: "Words of Support",
-                  count: wordsSupport.length,
-                },
-              ].map((t) => (
-                <button
-                  key={t.key}
-                  className={`pd-tab ${activeTab === t.key ? "active" : ""}`}
-                  onClick={() => setActiveTab(t.key)}
-                >
-                  {t.label}
-                  {t.count > 0 && <span className="pd-tab-badge">{t.count}</span>}
-                </button>
-              ))}
-            </div>
-
-            {activeTab === "updates" && (
-              <section className="pd-tab-panel">
-                {isNGO && !showUpdateForm && (
-                  <button
-                    className="pd-btn-primary pd-mb16"
-                    onClick={() => {
-                      resetUpdateForm();
-                      setShowUpdateForm(true);
-                    }}
-                  >
-                    + Add Update
-                  </button>
-                )}
-
-                {showUpdateForm && (
-                  <div className="pd-update-form">
-                    <h3>{editingUpdateId ? "✏️ Edit Update" : "📝 New Update"}</h3>
-
-                    <label>Title *</label>
-                    <input
-                      placeholder="e.g. Foundation Completed"
-                      value={updateForm.title}
-                      onChange={(e) =>
-                        setUpdateForm({ ...updateForm, title: e.target.value })
-                      }
-                    />
-
-                    <label>Description</label>
-                    <textarea
-                      rows={4}
-                      placeholder="What was accomplished…"
-                      value={updateForm.description}
-                      onChange={(e) =>
-                        setUpdateForm({
-                          ...updateForm,
-                          description: e.target.value,
-                        })
-                      }
-                    />
-
-                    <div className="pd-form-row">
-                      <div>
-                        <label>Expense Used (₹)</label>
-                        <input
-                          type="number"
-                          placeholder="0"
-                          value={updateForm.expenseUsed}
-                          onChange={(e) =>
-                            setUpdateForm({
-                              ...updateForm,
-                              expenseUsed: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-
-                      <div>
-                        <label>Category</label>
-                        <select
-                          value={updateForm.expenseCategory}
-                          onChange={(e) =>
-                            setUpdateForm({
-                              ...updateForm,
-                              expenseCategory: e.target.value,
-                            })
-                          }
-                        >
-                          <option value="">Select Category</option>
-                          <option>Materials</option>
-                          <option>Labor</option>
-                          <option>Transport</option>
-                          <option>Equipment</option>
-                          <option>Medical</option>
-                          <option>Other</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <label>Photos (up to 5)</label>
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={(e) =>
-                        setUpdateForm({
-                          ...updateForm,
-                          photos: Array.from(e.target.files || []),
-                        })
-                      }
-                    />
-
-                    {updateForm.photos.length > 0 && (
-                      <div className="pd-photo-preview-row">
-                        {updateForm.photos.map((f, i) => (
-                          <img
-                            key={i}
-                            src={URL.createObjectURL(f)}
-                            alt=""
-                            className="pd-photo-thumb"
-                          />
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="pd-form-actions">
-                      <button
-                        className="pd-btn-primary"
-                        onClick={handleUpdateSubmit}
-                      >
-                        {editingUpdateId ? "💾 Save Changes" : "🚀 Submit Update"}
-                      </button>
-                      <button className="pd-btn-ghost" onClick={resetUpdateForm}>
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="pd-updates-list">
-                  {updates.length === 0 && (
-                    <p className="pd-empty">No updates posted yet.</p>
-                  )}
-                  {updates.map((u) => (
-                    <UpdateCard
-                      key={u._id}
-                      update={u}
-                      isNGO={isNGO}
-                      onEdit={startEditUpdate}
-                      onDelete={deleteUpdate}
-                      onOpenPhoto={(photos, idx) => setImgModal({ photos, idx })}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {activeTab === "timeline" && (
-              <section className="pd-tab-panel">
-                {isNGO && !showTimelineForm && (
-                  <button
-                    className="pd-btn-primary pd-mb16"
-                    onClick={() => setShowTimelineForm(true)}
-                  >
-                    + Add Timeline
-                  </button>
-                )}
-
-                {isNGO && showTimelineForm && (
-                  <div className="pd-update-form">
-                    <h3>🗓️ New Timeline Item</h3>
-
-                    <label>Label *</label>
-                    <input
-                      placeholder="e.g. Materials Purchased"
-                      value={timelineForm.label}
-                      onChange={(e) =>
-                        setTimelineForm({ ...timelineForm, label: e.target.value })
-                      }
-                    />
-
-                    <label>Date</label>
-                    <input
-                      type="date"
-                      value={timelineForm.date}
-                      onChange={(e) =>
-                        setTimelineForm({ ...timelineForm, date: e.target.value })
-                      }
-                    />
-
-                    <label className="pd-checkbox-row">
-                      <input
-                        type="checkbox"
-                        checked={timelineForm.done}
-                        onChange={(e) =>
-                          setTimelineForm({
-                            ...timelineForm,
-                            done: e.target.checked,
-                          })
-                        }
-                      />
-                      <span>Mark as completed</span>
-                    </label>
-
-                    <div className="pd-form-actions">
-                      <button
-                        className="pd-btn-primary"
-                        onClick={handleTimelineSubmit}
-                      >
-                        Save Timeline
-                      </button>
-                      <button
-                        className="pd-btn-ghost"
-                        onClick={() => {
-                          setShowTimelineForm(false);
-                          setTimelineForm({ label: "", date: "", done: false });
-                        }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="pd-timeline">
-                  {timeline.length === 0 ? (
-                    <p className="pd-empty">No timeline events yet.</p>
-                  ) : (
-                    timeline.map((t, i) => (
-                      <div
-                        className={`pd-tl-item ${t.done ? "done" : "pending"}`}
-                        key={i}
-                      >
-                        <div className="pd-tl-col">
-                          <div className="pd-tl-dot">
-                            {t.done ? <CheckIcon /> : <CircleIcon />}
-                          </div>
-                          {i < timeline.length - 1 && (
-                            <div className={`pd-tl-line ${t.done ? "done" : ""}`} />
-                          )}
-                        </div>
-                        <div className="pd-tl-content">
-                          <span className="pd-tl-label">{t.label}</span>
-                          <span className="pd-tl-date">{t.date}</span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </section>
-            )}
-
-            {activeTab === "location" && (
-              <section className="pd-tab-panel">
-                {isNGO && (
-                  <div className="pd-update-form pd-mb16">
-                    <h3>📍 Project Location</h3>
-
-                    <label>Location Name / Address</label>
-                    <input
-                      placeholder="e.g. Kathmandu, Nepal"
-                      value={locationForm.location}
-                      onChange={(e) =>
-                        setLocationForm({
-                          ...locationForm,
-                          location: e.target.value,
-                        })
-                      }
-                    />
-
-                    <div className="pd-form-row">
-                      <div>
-                        <label>Latitude</label>
-                        <input
-                          type="number"
-                          step="any"
-                          placeholder="e.g. 27.7172"
-                          value={locationForm.lat}
-                          onChange={(e) =>
-                            setLocationForm({ ...locationForm, lat: e.target.value })
-                          }
-                        />
-                      </div>
-
-                      <div>
-                        <label>Longitude</label>
-                        <input
-                          type="number"
-                          step="any"
-                          placeholder="e.g. 85.3240"
-                          value={locationForm.lng}
-                          onChange={(e) =>
-                            setLocationForm({ ...locationForm, lng: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div className="pd-form-actions">
-                      <button className="pd-btn-primary" onClick={handleLocationSave}>
-                        Save Location
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="pd-map-wrap">
-                  <div className="pd-map-topbar">
-                    <button
-                      className="pd-btn-map-open"
-                      onClick={() => window.open(openStreetMapUrl, "_blank")}
-                    >
-                      🔗 Open in OpenStreetMap
-                    </button>
-                  </div>
-
-                  {hasCoordinates ? (
-                    <iframe
-                      title="OpenStreetMap"
-                      className="pd-map-iframe"
-                      src={embedUrl}
-                      allowFullScreen
-                    />
-                  ) : (
-                    <div className="pd-map-placeholder">
-                      📍 Location coordinates not set
-                    </div>
-                  )}
-
-                  <div className="pd-map-footer">
-                    <span>
-                      📍 {project.location || locationForm.location || "Location not provided"}
-                    </span>
-                    <button
-                      className="pd-btn-text"
-                      onClick={() => window.open(openStreetMapUrl, "_blank")}
-                    >
-                      Open in OpenStreetMap ↗
-                    </button>
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {activeTab === "impact" && (
-              <section className="pd-tab-panel">
-                {isNGO && (
-                  <div className="pd-update-form pd-mb16">
-                    <h3>📊 Upload Impact Report</h3>
-
-                    <div className="pd-form-row">
-                      <div>
-                        <label>Beneficiaries Reached</label>
-                        <input
-                          type="number"
-                          placeholder="e.g. 120"
-                          value={impactForm.beneficiaries}
-                          onChange={(e) =>
-                            setImpactForm({
-                              ...impactForm,
-                              beneficiaries: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-
-                      <div>
-                        <label>Testimonials Count</label>
-                        <input
-                          type="number"
-                          placeholder="e.g. 8"
-                          value={impactForm.testimonials}
-                          onChange={(e) =>
-                            setImpactForm({
-                              ...impactForm,
-                              testimonials: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <label>Impact Report PDF</label>
-                    <input
-                      type="file"
-                      accept=".pdf"
-                      onChange={(e) =>
-                        setImpactForm({
-                          ...impactForm,
-                          pdf: e.target.files?.[0] || null,
-                        })
-                      }
-                    />
-
-                    <label>Before / After Photos</label>
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={(e) =>
-                        setImpactForm({
-                          ...impactForm,
-                          photos: Array.from(e.target.files || []),
-                        })
-                      }
-                    />
-
-                    {impactForm.photos.length > 0 && (
-                      <div className="pd-photo-preview-row">
-                        {impactForm.photos.map((f, i) => (
-                          <img
-                            key={i}
-                            src={URL.createObjectURL(f)}
-                            alt=""
-                            className="pd-photo-thumb"
-                          />
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="pd-form-actions">
-                      <button className="pd-btn-primary" onClick={handleImpactSubmit}>
-                        Upload Impact Report
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {impactReport ? (
-                  <div className="pd-impact-grid">
-                    <ImpactCard
-                      icon="📄"
-                      label="PDF Impact Report"
-                      sub={impactReport.pdfUploaded ? "Uploaded" : "Not uploaded"}
-                      color={impactReport.pdfUploaded ? "green" : "gray"}
-                    />
-                    <ImpactCard
-                      icon="🖼️"
-                      label="Before/After Photos"
-                      sub={
-                        impactReport.photoCount
-                          ? `${impactReport.photoCount} Photos`
-                          : "No photos"
-                      }
-                      color="blue"
-                    />
-                    <ImpactCard
-                      icon="👥"
-                      label="Beneficiaries Reached"
-                      sub={impactReport.beneficiaries || "—"}
-                      color="purple"
-                    />
-                    <ImpactCard
-                      icon="💬"
-                      label="Testimonials Collected"
-                      sub={
-                        impactReport.testimonials
-                          ? `${impactReport.testimonials} Stories`
-                          : "—"
-                      }
-                      color="amber"
-                    />
-                  </div>
+              <div className="pd-timeline">
+                {timeline.length === 0 ? (
+                  <p className="pd-empty">No timeline events yet.</p>
                 ) : (
-                  <p className="pd-empty">No impact report available yet.</p>
-                )}
-              </section>
-            )}
-
-            {activeTab === "words" && (
-              <section className="pd-tab-panel">
-                <p className="pd-words-hint">
-                  Please donate to share words of support.
-                </p>
-
-                {wordsSupport.length === 0 ? (
-                  <p className="pd-empty">No words of support yet.</p>
-                ) : (
-                  wordsSupport.map((w, i) => (
-                    <div className="pd-word-card" key={i}>
-                      <div className="pd-word-avatar">
-                        {w.name?.[0]?.toUpperCase() || "?"}
-                      </div>
-                      <div className="pd-word-body">
-                        <div className="pd-word-meta">
-                          <strong>{w.name}</strong>
-                          <span>{w.amount} · {w.ago}</span>
+                  timeline.map((t, i) => (
+                    <div
+                      className={`pd-tl-item ${t.done ? "done" : "pending"}`}
+                      key={i}
+                    >
+                      <div className="pd-tl-col">
+                        <div className="pd-tl-dot">
+                          {t.done ? <CheckIcon /> : <CircleIcon />}
                         </div>
-                        <p>{w.message}</p>
+                        {i < timeline.length - 1 && (
+                          <div className={`pd-tl-line ${t.done ? "done" : ""}`} />
+                        )}
+                      </div>
+                      <div className="pd-tl-content">
+                        <span className="pd-tl-label">{t.label}</span>
+                        <span className="pd-tl-date">{t.date}</span>
                       </div>
                     </div>
                   ))
                 )}
-              </section>
-            )}
-          </div>
+              </div>
+            </section>
+          )}
 
-          <aside className="pd-sidebar">
-            <div className="pd-sidebar-card">
-              {!isAdmin && (
-                <>
-                  <button
-                    className="pd-btn-donate-big"
-                    onClick={() => setShowDonate(true)}
-                    disabled={remainingToGoal <= 0}
-                    title={remainingToGoal <= 0 ? "Goal reached" : "Donate now"}
-                  >
-                    <HeartIcon /> {remainingToGoal <= 0 ? "Goal Reached" : "Donate Now"}
-                  </button>
+          {activeTab === "location" && (
+            <section className="pd-tab-panel">
+              {isNGO && (
+                <div className="pd-update-form pd-mb16">
+                  <h3>📍 Project Location</h3>
 
-                  <button
-                    className="pd-btn-share-full"
-                    onClick={() => {
-                      navigator.clipboard.writeText(window.location.href);
-                      showToast("Link copied!");
-                    }}
-                  >
-                    <ShareIcon /> Share This Project
-                  </button>
-                </>
+                  <label>Location Name / Address</label>
+                  <input
+                    placeholder="e.g. Kathmandu, Nepal"
+                    value={locationForm.location}
+                    onChange={(e) =>
+                      setLocationForm({
+                        ...locationForm,
+                        location: e.target.value,
+                      })
+                    }
+                  />
+
+                  <div className="pd-form-row">
+                    <div>
+                      <label>Latitude</label>
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="e.g. 27.7172"
+                        value={locationForm.lat}
+                        onChange={(e) =>
+                          setLocationForm({ ...locationForm, lat: e.target.value })
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label>Longitude</label>
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="e.g. 85.3240"
+                        value={locationForm.lng}
+                        onChange={(e) =>
+                          setLocationForm({ ...locationForm, lng: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pd-form-actions">
+                    <button className="pd-btn-primary" onClick={handleLocationSave}>
+                      Save Location
+                    </button>
+                  </div>
+                </div>
               )}
 
-              {isAdmin && <div className="pd-admin-view-badge">Admin View</div>}
-            </div>
+              <div className="pd-map-wrap">
+                <div className="pd-map-topbar">
+                  <button
+                    className="pd-btn-map-open"
+                    onClick={() => window.open(openStreetMapUrl, "_blank")}
+                  >
+                    🔗 Open in OpenStreetMap
+                  </button>
+                </div>
 
-            <div className="pd-sidebar-card">
-              <h3 className="pd-sidebar-title">Transparency Score</h3>
+                {hasCoordinates ? (
+                  <iframe
+                    title="OpenStreetMap"
+                    className="pd-map-iframe"
+                    src={embedUrl}
+                    allowFullScreen
+                  />
+                ) : (
+                  <div className="pd-map-placeholder">
+                    📍 Location coordinates not set
+                  </div>
+                )}
 
-              <div className="pd-ts-main">
-                <ScoreRing score={ts.score || 0} />
-                <div>
-                  <strong className="pd-ts-label">
-                    {scoreLabel(ts.score || 0)}
-                  </strong>
-                  <p className="pd-ts-sub">
-                    Based on real donors, updates, expenses, and proof uploaded
-                  </p>
+                <div className="pd-map-footer">
+                  <span>
+                    📍 {project.location || locationForm.location || "Location not provided"}
+                  </span>
+                  <button
+                    className="pd-btn-text"
+                    onClick={() => window.open(openStreetMapUrl, "_blank")}
+                  >
+                    Open in OpenStreetMap ↗
+                  </button>
                 </div>
               </div>
+            </section>
+          )}
 
-              <div className="pd-ts-bars">
-                <TsBar label="Regular Updates" value={ts.regular_updates || 0} />
-                <TsBar label="Expense Reports" value={ts.expense_reports || 0} />
-                <TsBar
-                  label="Completion Reports"
-                  value={ts.completion_reports || 0}
-                />
-                <TsBar label="Donor Feedback" value={ts.donor_feedback || 0} />
-              </div>
+          {activeTab === "impact" && (
+            <section className="pd-tab-panel">
+              {isNGO && (
+                <div className="pd-update-form pd-mb16">
+                  <h3>📊 Upload Impact Report</h3>
 
-              <div className="pd-ts-summary">
-                <div className="pd-ts-summary-row">
-                  <span>Raised</span>
-                  <strong>₹{fmt(ts.raised)}</strong>
-                </div>
-                <div className="pd-ts-summary-row">
-                  <span>Used in Updates</span>
-                  <strong>₹{fmt(ts.used)}</strong>
-                </div>
-                <div className="pd-ts-summary-row">
-                  <span>Funds Unused</span>
-                  <strong>₹{fmt(ts.funds_unused)}</strong>
-                </div>
-                <div className="pd-ts-summary-row">
-                  <span>Remaining to Goal</span>
-                  <strong>₹{fmt(ts.remaining_to_goal)}</strong>
-                </div>
-                <div className="pd-ts-summary-row">
-                  <span>Total Donors</span>
-                  <strong>{ts.donors}</strong>
-                </div>
-                <div className="pd-ts-summary-row">
-                  <span>Total Updates</span>
-                  <strong>{ts.updates_count}</strong>
-                </div>
-                <div className="pd-ts-summary-row">
-                  <span>Proof Photos</span>
-                  <strong>{ts.proof_photos}</strong>
-                </div>
-              </div>
-            </div>
-
-            <div className="pd-sidebar-card">
-              <div className="pd-donors-header">
-                <h3 className="pd-sidebar-title">Recent Donors</h3>
-                <span className="pd-donors-count">💜 {realDonorCount} donations</span>
-              </div>
-
-              {donors.length === 0 ? (
-                <p className="pd-empty">No donors yet.</p>
-              ) : (
-                donors.slice(0, 5).map((d, i) => (
-                  <div className="pd-donor-row" key={i}>
-                    <div className="pd-donor-avatar">
-                      {d.name?.[0]?.toUpperCase() || "?"}
-                    </div>
+                  <div className="pd-form-row">
                     <div>
-                      <p className="pd-donor-name">{d.name}</p>
-                      <p className="pd-donor-amt">{d.amount} · {d.ago}</p>
+                      <label>Beneficiaries Reached</label>
+                      <input
+                        type="number"
+                        placeholder="e.g. 120"
+                        value={impactForm.beneficiaries}
+                        onChange={(e) =>
+                          setImpactForm({
+                            ...impactForm,
+                            beneficiaries: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label>Testimonials Count</label>
+                      <input
+                        type="number"
+                        placeholder="e.g. 8"
+                        value={impactForm.testimonials}
+                        onChange={(e) =>
+                          setImpactForm({
+                            ...impactForm,
+                            testimonials: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <label>Impact Report PDF</label>
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) =>
+                      setImpactForm({
+                        ...impactForm,
+                        pdf: e.target.files?.[0] || null,
+                      })
+                    }
+                  />
+
+                  <label>Before / After Photos</label>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={(e) =>
+                      setImpactForm({
+                        ...impactForm,
+                        photos: Array.from(e.target.files || []),
+                      })
+                    }
+                  />
+
+                  {impactForm.photos.length > 0 && (
+                    <div className="pd-photo-preview-row">
+                      {impactForm.photos.map((f, i) => (
+                        <img
+                          key={i}
+                          src={URL.createObjectURL(f)}
+                          alt=""
+                          className="pd-photo-thumb"
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="pd-form-actions">
+                    <button className="pd-btn-primary" onClick={handleImpactSubmit}>
+                      Upload Impact Report
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {impactReport ? (
+                <div className="pd-impact-grid">
+                  <ImpactCard
+                    icon="📄"
+                    label="PDF Impact Report"
+                    sub={impactReport.pdfUploaded ? "Uploaded" : "Not uploaded"}
+                    color={impactReport.pdfUploaded ? "green" : "gray"}
+                  />
+                  <ImpactCard
+                    icon="🖼️"
+                    label="Before/After Photos"
+                    sub={
+                      impactReport.photoCount
+                        ? `${impactReport.photoCount} Photos`
+                        : "No photos"
+                    }
+                    color="blue"
+                  />
+                  <ImpactCard
+                    icon="👥"
+                    label="Beneficiaries Reached"
+                    sub={impactReport.beneficiaries || "—"}
+                    color="purple"
+                  />
+                  <ImpactCard
+                    icon="💬"
+                    label="Testimonials Collected"
+                    sub={
+                      impactReport.testimonials
+                        ? `${impactReport.testimonials} Stories`
+                        : "—"
+                    }
+                    color="amber"
+                  />
+                </div>
+              ) : (
+                <p className="pd-empty">No impact report available yet.</p>
+              )}
+            </section>
+          )}
+
+          {activeTab === "words" && (
+            <section className="pd-tab-panel">
+              <p className="pd-words-hint">
+                Please donate to share words of support.
+              </p>
+
+              {wordsSupport.length === 0 ? (
+                <p className="pd-empty">No words of support yet.</p>
+              ) : (
+                wordsSupport.map((w, i) => (
+                  <div className="pd-word-card" key={i}>
+                    <div className="pd-word-avatar">
+                      {w.name?.[0]?.toUpperCase() || "?"}
+                    </div>
+                    <div className="pd-word-body">
+                      <div className="pd-word-meta">
+                        <strong>{w.name}</strong>
+                        <span>{w.amount} · {w.ago}</span>
+                      </div>
+                      <p>{w.message}</p>
                     </div>
                   </div>
                 ))
               )}
-            </div>
-          </aside>
+            </section>
+          )}
         </div>
 
-        {imgModal && (
-          <div className="pd-modal-backdrop" onClick={() => setImgModal(null)}>
-            <div className="pd-modal" onClick={(e) => e.stopPropagation()}>
-              <button
-                className="pd-modal-close"
-                onClick={() => setImgModal(null)}
-              >
-                ✕
-              </button>
-              <img
-                className="pd-modal-img"
-                src={imgUrl(imgModal.photos[imgModal.idx])}
-                alt=""
-              />
+        <aside className="pd-sidebar">
+          <div className="pd-sidebar-card">
+            {!isAdmin && (
+              <>
+                <button
+                  className="pd-btn-donate-big"
+                  onClick={() => setShowDonate(true)}
+                  disabled={remainingToGoal <= 0}
+                  title={remainingToGoal <= 0 ? "Goal reached" : "Donate now"}
+                >
+                  <HeartIcon /> {remainingToGoal <= 0 ? "Goal Reached" : "Donate Now"}
+                </button>
 
-              {imgModal.photos.length > 1 && (
-                <div className="pd-modal-nav">
-                  <button
-                    onClick={() =>
-                      setImgModal((m) => ({
-                        ...m,
-                        idx: (m.idx - 1 + m.photos.length) % m.photos.length,
-                      }))
-                    }
-                  >
-                    ‹
-                  </button>
-                  <span>
-                    {imgModal.idx + 1} / {imgModal.photos.length}
-                  </span>
-                  <button
-                    onClick={() =>
-                      setImgModal((m) => ({
-                        ...m,
-                        idx: (m.idx + 1) % m.photos.length,
-                      }))
-                    }
-                  >
-                    ›
-                  </button>
-                </div>
-              )}
+                <button
+                  className="pd-btn-share-full"
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    showToast("Link copied!");
+                  }}
+                >
+                  <ShareIcon /> Share This Project
+                </button>
+              </>
+            )}
+
+            {isAdmin && <div className="pd-admin-view-badge">Admin View</div>}
+          </div>
+
+          <div className="pd-sidebar-card">
+            <h3 className="pd-sidebar-title">Transparency Score</h3>
+
+            <div className="pd-ts-main">
+              <ScoreRing score={ts.score || 0} />
+              <div>
+                <strong className="pd-ts-label">
+                  {scoreLabel(ts.score || 0)}
+                </strong>
+                <p className="pd-ts-sub">
+                  Based on real donors, updates, expenses, and proof uploaded
+                </p>
+              </div>
+            </div>
+
+            <div className="pd-ts-bars">
+              <TsBar label="Regular Updates" value={ts.regular_updates || 0} />
+              <TsBar label="Expense Reports" value={ts.expense_reports || 0} />
+              <TsBar
+                label="Completion Reports"
+                value={ts.completion_reports || 0}
+              />
+              <TsBar label="Donor Feedback" value={ts.donor_feedback || 0} />
+            </div>
+
+            <div className="pd-ts-summary">
+              <div className="pd-ts-summary-row">
+                <span>Raised</span>
+                <strong>₹{fmt(ts.raised)}</strong>
+              </div>
+              <div className="pd-ts-summary-row">
+                <span>Used in Updates</span>
+                <strong>₹{fmt(ts.used)}</strong>
+              </div>
+              <div className="pd-ts-summary-row">
+                <span>Funds Unused</span>
+                <strong>₹{fmt(ts.funds_unused)}</strong>
+              </div>
+              <div className="pd-ts-summary-row">
+                <span>Remaining to Goal</span>
+                <strong>₹{fmt(ts.remaining_to_goal)}</strong>
+              </div>
+              <div className="pd-ts-summary-row">
+                <span>Total Donors</span>
+                <strong>{ts.donors}</strong>
+              </div>
+              <div className="pd-ts-summary-row">
+                <span>Total Updates</span>
+                <strong>{ts.updates_count}</strong>
+              </div>
+              <div className="pd-ts-summary-row">
+                <span>Proof Photos</span>
+                <strong>{ts.proof_photos}</strong>
+              </div>
             </div>
           </div>
-        )}
 
-        {showDonate && project && !isAdmin && (
-          <DonateModal
-            project={{
-              ...project,
-              raisedAmount: realRaisedAmount,
-            }}
-            onClose={() => {
-              setShowDonate(false);
-              fetchProject();
-              fetchDonors();
-              fetchWords();
-              fetchTimeline();
-              fetchImpact();
-              fetchTransparency();
-              fetchUpdates();
-            }}
-          />
-        )}
+          <div className="pd-sidebar-card">
+            <div className="pd-donors-header">
+              <h3 className="pd-sidebar-title">Recent Donors</h3>
+              <span className="pd-donors-count">💜 {realDonorCount} donations</span>
+            </div>
+
+            {donors.length === 0 ? (
+              <p className="pd-empty">No donors yet.</p>
+            ) : (
+              donors.slice(0, 5).map((d, i) => (
+                <div className="pd-donor-row" key={i}>
+                  <div className="pd-donor-avatar">
+                    {d.name?.[0]?.toUpperCase() || "?"}
+                  </div>
+                  <div>
+                    <p className="pd-donor-name">{d.name}</p>
+                    <p className="pd-donor-amt">{d.amount} · {d.ago}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </aside>
       </div>
-    </LayoutWrapper>
+
+      {imgModal && (
+        <div className="pd-modal-backdrop" onClick={() => setImgModal(null)}>
+          <div className="pd-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="pd-modal-close"
+              onClick={() => setImgModal(null)}
+            >
+              ✕
+            </button>
+            <img
+              className="pd-modal-img"
+              src={imgUrl(imgModal.photos[imgModal.idx])}
+              alt=""
+            />
+
+            {imgModal.photos.length > 1 && (
+              <div className="pd-modal-nav">
+                <button
+                  onClick={() =>
+                    setImgModal((m) => ({
+                      ...m,
+                      idx: (m.idx - 1 + m.photos.length) % m.photos.length,
+                    }))
+                  }
+                >
+                  ‹
+                </button>
+                <span>
+                  {imgModal.idx + 1} / {imgModal.photos.length}
+                </span>
+                <button
+                  onClick={() =>
+                    setImgModal((m) => ({
+                      ...m,
+                      idx: (m.idx + 1) % m.photos.length,
+                    }))
+                  }
+                >
+                  ›
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showDonate && project && !isAdmin && (
+        <DonateModal
+          project={{
+            ...project,
+            raisedAmount: realRaisedAmount,
+          }}
+          onClose={() => {
+            setShowDonate(false);
+            fetchProject();
+            fetchDonors();
+            fetchWords();
+            fetchTimeline();
+            fetchImpact();
+            fetchTransparency();
+            fetchUpdates();
+          }}
+        />
+      )}
+    </div>
   );
+
+  if (isNGO) return <NgoLayout>{pageContent}</NgoLayout>;
+  if (isAdmin) return <AdminLayout>{pageContent}</AdminLayout>;
+  return pageContent;
 }
 
 function UpdateCard({ update: u, isNGO, onEdit, onDelete, onOpenPhoto }) {

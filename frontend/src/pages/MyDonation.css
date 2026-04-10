@@ -288,6 +288,35 @@
 .mydon-empty p {
   font-size: 14px;
 }
+.mydon-receipt-actions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mydon-receipt-btn {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  line-height: 1.2;
+}
+
+.mydon-receipt-view {
+  background: #eef6ff;
+  color: #2563eb;
+}
+
+.mydon-receipt-download {
+  background: #ecfdf3;
+  color: #15803d;
+}
 
 /* ============================================================
    ANIMATIONS

@@ -116,6 +116,10 @@ const donationSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    receiptUrl: {
+  type: String,
+  default: null,
+},
   },
   { timestamps: true }
 );

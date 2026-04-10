@@ -566,3 +566,71 @@ exports.getProjectById = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
+// ================= UPLOAD IMPACT REPORT =================
+exports.uploadImpactReport = async (req, res) => {
+  try {
+    const ngoProfile = await NGO.findOne({ user: req.user._id });
+
+    if (!ngoProfile) {
+      return res.status(404).json({ message: "NGO profile not found" });
+    }
+
+    const project = await Project.findById(req.params.id);
+
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    if (project.ngo.toString() !== ngoProfile._id.toString()) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+
+    const pdfFile = req.files?.pdf?.[0] || null;
+    const photoFiles = req.files?.photos || [];
+
+    project.impactReport = {
+      beneficiaries: req.body.beneficiaries || "",
+      testimonials: req.body.testimonials || "",
+      pdf: pdfFile ? pdfFile.filename : project.impactReport?.pdf || null,
+      photos: photoFiles.length
+        ? photoFiles.map((file) => file.filename)
+        : project.impactReport?.photos || [],
+    };
+
+    await project.save();
+
+    return res.status(200).json({
+      message: "Impact report uploaded successfully",
+      impactReport: project.impactReport,
+    });
+  } catch (error) {
+    console.error("UPLOAD IMPACT REPORT ERROR:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ================= GET IMPACT REPORT =================
+exports.getImpactReport = async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    const impact = project.impactReport || {};
+
+    return res.status(200).json({
+      pdfUploaded: !!impact.pdf,
+      pdf: impact.pdf || null,
+      photoCount: impact.photos?.length || 0,
+      photos: impact.photos || [],
+      beneficiaries: impact.beneficiaries || "",
+      testimonials: impact.testimonials || "",
+    });
+  } catch (error) {
+    console.error("GET IMPACT REPORT ERROR:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};

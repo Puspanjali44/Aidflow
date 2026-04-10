@@ -114,6 +114,13 @@ const projectSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    impactReport: {
+  beneficiaries: { type: String, default: "" },
+  testimonials: { type: String, default: "" },
+  pdf: { type: String, default: null },
+  photos: { type: [String], default: [] },
+},
   },
   { timestamps: true }
 );

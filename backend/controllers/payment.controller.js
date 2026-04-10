@@ -2,6 +2,7 @@ const axios = require("axios");
 const Donation = require("../models/Donation");
 const Project = require("../models/Project");
 const RecurringDonation = require("../models/RecurringDonation");
+const generateReceipt = require("../utils/generateReceipt");
 
 const KHALTI_SECRET_KEY = process.env.KHALTI_SECRET_KEY;
 const KHALTI_BASE_URL =
@@ -34,26 +35,40 @@ exports.initiateKhaltiPayment = async (req, res) => {
       country,
     } = req.body;
 
-    if (!projectId || !amount) {
+    if (!projectId || amount === undefined || amount === null) {
       return res.status(400).json({ message: "Project and amount required" });
     }
 
     const numericAmount = Number(amount);
-    const numericBaseAmount = Number(baseAmount || amount);
-    const numericPlatformFee = Number(platformFee || 0);
+    const numericBaseAmount = Number(baseAmount ?? amount);
+    const numericPlatformFee = Number(platformFee ?? 0);
 
     if (
       Number.isNaN(numericAmount) ||
       Number.isNaN(numericBaseAmount) ||
+      Number.isNaN(numericPlatformFee) ||
       numericAmount <= 0 ||
       numericBaseAmount <= 0
     ) {
       return res.status(400).json({ message: "Invalid donation amount" });
     }
 
+    if (numericAmount < 10) {
+      return res
+        .status(400)
+        .json({ message: "Minimum donation amount is NPR 10" });
+    }
+
     const project = await Project.findById(projectId);
-    if (!project || project.status !== "active") {
-      return res.status(400).json({ message: "Project not available" });
+
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    if (project.status !== "active") {
+      return res.status(400).json({
+        message: `Project not available for donation. Current status: ${project.status}`,
+      });
     }
 
     let recurringDonationId = null;
@@ -85,6 +100,10 @@ exports.initiateKhaltiPayment = async (req, res) => {
 
     const purchaseOrderId = `AIDFLOW-${Date.now()}-${projectId}`;
     const totalAmountPaisa = Math.round(numericAmount * 100);
+
+    if (!Number.isInteger(totalAmountPaisa) || totalAmountPaisa <= 0) {
+      return res.status(400).json({ message: "Invalid Khalti amount" });
+    }
 
     const pendingDonation = await Donation.create({
       donor: req.user._id,
@@ -121,6 +140,10 @@ exports.initiateKhaltiPayment = async (req, res) => {
         phone: "9800000001",
       },
     };
+
+    console.log("KHALTI INITIATE PAYLOAD:", payload);
+    console.log("KHALTI BASE URL:", KHALTI_BASE_URL);
+    console.log("PROJECT STATUS:", project.status);
 
     const response = await axios.post(
       `${KHALTI_BASE_URL}/epayment/initiate/`,
@@ -161,7 +184,9 @@ exports.initiateKhaltiPayment = async (req, res) => {
     return res.status(500).json({
       message:
         error.response?.data?.detail ||
+        error.response?.data?.message ||
         error.response?.data?.error_key ||
+        error.message ||
         "Failed to initiate Khalti payment",
       error: error.response?.data || error.message,
     });
@@ -192,9 +217,11 @@ exports.verifyKhaltiPayment = async (req, res) => {
       );
 
       result = response.data;
-      donation = await Donation.findOne({ khaltiPidx: pidx });
+      donation = await Donation.findOne({ khaltiPidx: pidx }).populate(
+        "project donor"
+      );
     } else if (donationId) {
-      donation = await Donation.findById(donationId);
+      donation = await Donation.findById(donationId).populate("project donor");
 
       result = {
         status: status || "FAILED",
@@ -240,7 +267,7 @@ exports.verifyKhaltiPayment = async (req, res) => {
           });
         }
 
-        const project = await Project.findById(donation.project);
+        const project = await Project.findById(donation.project._id || donation.project);
 
         if (project) {
           project.raisedAmount =
@@ -259,6 +286,12 @@ exports.verifyKhaltiPayment = async (req, res) => {
           }
 
           await project.save();
+
+          const donorData = donation.donor || req.user || null;
+          const receipt = await generateReceipt(donation, donorData, project);
+
+          donation.receiptUrl = receipt.relativePath;
+          await donation.save();
         }
       }
     } else if (isFailed) {
@@ -276,11 +309,14 @@ exports.verifyKhaltiPayment = async (req, res) => {
       }
     }
 
+    const refreshedDonation = await Donation.findById(donation._id);
+
     return res.status(200).json({
       ...result,
       donationId: donation._id,
-      projectId: donation.project,
-      redirectUrl: `/project/${donation.project}`,
+      projectId: donation.project._id || donation.project,
+      receiptUrl: refreshedDonation?.receiptUrl || null,
+      redirectUrl: `/project/${donation.project._id || donation.project}`,
     });
   } catch (error) {
     console.error(
@@ -291,6 +327,7 @@ exports.verifyKhaltiPayment = async (req, res) => {
     return res.status(500).json({
       message:
         error.response?.data?.detail ||
+        error.response?.data?.message ||
         error.response?.data?.error_key ||
         "Failed to verify Khalti payment",
       error: error.response?.data || error.message,

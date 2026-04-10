@@ -17,46 +17,69 @@ export default function KhaltiReturn() {
         const txnId = searchParams.get("txnId");
 
         if (!pidx) {
-          setMessage("❌ Missing payment ID");
+          setMessage("Missing payment ID");
           return;
         }
 
         if (status !== "Completed") {
-          setMessage(`❌ Payment ${status || "failed"}`);
+          setMessage(`Payment ${status || "failed"}`);
           return;
         }
 
         const token = localStorage.getItem("token");
         if (!token) {
-          setMessage("❌ Please log in again");
+          setMessage("Please log in again");
           return;
         }
 
         const res = await axios.post(
           "http://localhost:5000/api/payments/khalti/verify",
           { pidx },
-          { headers: { Authorization: `Bearer ${token}` } }
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
         );
 
         const projectId = res.data?.projectId || searchParams.get("projectId");
+        const receiptUrl = res.data?.receiptUrl;
+
+        if (receiptUrl) {
+          const fileResponse = await fetch(`http://localhost:5000${receiptUrl}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          const blob = await fileResponse.blob();
+          const blobUrl = window.URL.createObjectURL(blob);
+
+          const link = document.createElement("a");
+          link.href = blobUrl;
+          link.download = "AidFlow-Receipt.pdf";
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+
+          window.URL.revokeObjectURL(blobUrl);
+        }
 
         if (!projectId) {
-          setMessage("✅ Payment successful, but project not found.");
+          setMessage("Payment successful, but project not found.");
+          setIsSuccess(true);
           return;
         }
 
-        setMessage("✅ Payment verified successfully!");
+        setMessage("Payment verified successfully. Redirecting...");
         setIsSuccess(true);
 
-        // ✅ ALWAYS redirect to PUBLIC donor view after donation
         setTimeout(() => {
           navigate(`/project/${projectId}?payment=success&txnId=${txnId || ""}`, {
             replace: true,
           });
-        }, 1400);
+        }, 1500);
       } catch (error) {
         console.error(error);
-        setMessage(error.response?.data?.message || "❌ Verification failed");
+        setMessage(error.response?.data?.message || "Verification failed");
       }
     };
 
@@ -68,7 +91,7 @@ export default function KhaltiReturn() {
       <h2 style={{ color: isSuccess ? "#16a34a" : "#ef4444" }}>
         {message}
       </h2>
-      {isSuccess && <p>Redirecting to project page...</p>}
+      {isSuccess && <p>Please wait a moment...</p>}
     </div>
   );
 }

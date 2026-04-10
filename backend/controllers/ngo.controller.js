@@ -28,20 +28,21 @@ exports.updateProfile = async (req, res) => {
     }
 
     const fields = [
-      "name",
-      "registrationNumber",
-      "category",
-      "location",
-      "phone",
-      "website",
-      "description",
-      "mission",
-      "establishedYear",
-      "bankName",
-      "accountNumber",
-      "accountName",
-      "branch",
-    ];
+  "name",
+  "registrationNumber",
+  "category",
+  "mainNiche",
+  "location",
+  "phone",
+  "website",
+  "description",
+  "mission",
+  "establishedYear",
+  "bankName",
+  "accountNumber",
+  "accountName",
+  "branch",
+];
 
     fields.forEach((field) => {
       if (req.body[field] !== undefined) {

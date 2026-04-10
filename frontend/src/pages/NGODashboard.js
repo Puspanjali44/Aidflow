@@ -28,7 +28,14 @@ function NGODashboard() {
   const [loading, setLoading] = useState(true);
 
   const [showNotifications, setShowNotifications] = useState(false);
-  const [readNotifications, setReadNotifications] = useState([]);
+  const [readNotifications, setReadNotifications] = useState(() => {
+    const saved = localStorage.getItem("ngoReadNotifications");
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [donationNotifications, setDonationNotifications] = useState(() => {
+  const saved = localStorage.getItem("ngoDonationNotifications");
+  return saved ? JSON.parse(saved) : [];
+});
 
   const navigate = useNavigate();
   const notificationRef = useRef(null);
@@ -42,12 +49,26 @@ function NGODashboard() {
       fetch(`${API}/api/projects/my`, { headers }).then((r) => r.json()),
     ])
       .then(([profileData, projectData]) => {
+        const safeProjects = Array.isArray(projectData) ? projectData : [];
         setProfile(profileData);
-        setProjects(Array.isArray(projectData) ? projectData : []);
+        setProjects(safeProjects);
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "ngoReadNotifications",
+      JSON.stringify(readNotifications)
+    );
+  }, [readNotifications]);
+  useEffect(() => {
+  localStorage.setItem(
+    "ngoDonationNotifications",
+    JSON.stringify(donationNotifications)
+  );
+}, [donationNotifications]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -93,6 +114,77 @@ function NGODashboard() {
     .filter((p) => p.status === "active" || p.status === "completed")
     .sort((a, b) => (b.raisedAmount || 0) - (a.raisedAmount || 0))
     .slice(0, 3);
+
+  const ngoMainNiche =
+    profile?.mainNiche ||
+    profile?.focusArea ||
+    profile?.cause ||
+    profile?.sector ||
+    profile?.primaryCategory ||
+    (profile?.category && profile.category !== "General" ? profile.category : "") ||
+    "";
+
+  useEffect(() => {
+    if (!projects.length) return;
+
+    const previousSnapshot = JSON.parse(
+      localStorage.getItem("ngoProjectDonationSnapshot") || "{}"
+    );
+
+    const newDonationItems = [];
+
+    projects.forEach((project) => {
+      const prev = previousSnapshot[project._id] || {
+        donorCount: 0,
+        raisedAmount: 0,
+      };
+
+      const currentDonors = Number(project.donorCount || 0);
+      const currentRaised = Number(project.raisedAmount || 0);
+
+      const donorIncrease = currentDonors - Number(prev.donorCount || 0);
+      const amountIncrease = currentRaised - Number(prev.raisedAmount || 0);
+
+      if (donorIncrease > 0 || amountIncrease > 0) {
+        newDonationItems.push({
+          id: `donation-${project._id}-${currentDonors}-${currentRaised}`,
+          type: "success",
+          title: "New donation received",
+          message:
+            donorIncrease > 0 && amountIncrease > 0
+              ? `${project.title} received ${donorIncrease} new donor(s) and Rs. ${amountIncrease.toLocaleString()} more.`
+              : donorIncrease > 0
+              ? `${project.title} received ${donorIncrease} new donor(s).`
+              : `${project.title} received Rs. ${amountIncrease.toLocaleString()} more.`,
+          time: new Date().toISOString(),
+          action: `/projects/${project._id}`,
+        });
+      }
+    });
+
+    if (newDonationItems.length > 0) {
+      setDonationNotifications((prev) => {
+        const merged = [...newDonationItems, ...prev];
+        return merged.filter(
+          (item, index, arr) =>
+            index === arr.findIndex((x) => x.id === item.id)
+        );
+      });
+    }
+
+    const nextSnapshot = {};
+    projects.forEach((project) => {
+      nextSnapshot[project._id] = {
+        donorCount: Number(project.donorCount || 0),
+        raisedAmount: Number(project.raisedAmount || 0),
+      };
+    });
+
+    localStorage.setItem(
+      "ngoProjectDonationSnapshot",
+      JSON.stringify(nextSnapshot)
+    );
+  }, [projects]);
 
   const notifications = useMemo(() => {
     const items = [];
@@ -154,8 +246,10 @@ function NGODashboard() {
       }
     });
 
+    items.push(...donationNotifications);
+
     return items.sort((a, b) => new Date(b.time || 0) - new Date(a.time || 0));
-  }, [profile, projects]);
+  }, [profile, projects, donationNotifications]);
 
   const unreadCount = notifications.filter(
     (n) => !readNotifications.includes(n.id)
@@ -341,7 +435,7 @@ function NGODashboard() {
               </div>
 
               <p className="profile-hero-sub">
-                {profile?.category && <span>{profile.category}</span>}
+                {ngoMainNiche && <span>{ngoMainNiche}</span>}
                 {profile?.location && <span>{profile.location}</span>}
                 {profile?.phone && <span>{profile.phone}</span>}
               </p>
@@ -463,14 +557,14 @@ function NGODashboard() {
                   <span className="info-label">Reg. Number</span>
                   <span className="info-val">{profile?.registrationNumber || "—"}</span>
                 </div>
-                <div className="info-row">
+                {/* <div className="info-row">
                   <span className="info-label">Established</span>
                   <span className="info-val">{profile?.establishedYear || "—"}</span>
-                </div>
-                <div className="info-row">
+                </div> */}
+                {/* <div className="info-row">
                   <span className="info-label">Website</span>
                   <span className="info-val">{profile?.website || "—"}</span>
-                </div>
+                </div> */}
                 <div className="info-row">
                   <span className="info-label">Bank</span>
                   <span className="info-val">{profile?.bankName || "—"}</span>

@@ -39,7 +39,7 @@ function App() {
         <Route path="/my-subscriptions" element={<MySubscriptions />} />
         <Route path="/badges" element={<Badges />} />
 
-        <Route path="/project/:id" element={<ProjectDetailsPublic />} />
+        <Route path="/project/:id" element={<ProjectDetails />} />
 
         <Route path="/ngo-dashboard" element={<NGODashboard />} />
         <Route path="/create-project" element={<CreateProject />} />

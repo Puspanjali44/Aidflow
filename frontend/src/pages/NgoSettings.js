@@ -280,6 +280,24 @@ function NgoSettings() {
               />
             </div>
             <div className="form-group">
+  <label>Main Niche</label>
+  <select
+    value={data?.mainNiche || ""}
+    onChange={e => handleChange("mainNiche", e.target.value)}
+  >
+    <option value="">Select niche</option>
+    <option value="Education">Education</option>
+    <option value="Health">Health</option>
+    <option value="Women Empowerment">Women Empowerment</option>
+    <option value="Women Health">Women Health</option>
+    <option value="Disaster Relief">Disaster Relief</option>
+    <option value="Environment">Environment</option>
+    <option value="Child Welfare">Child Welfare</option>
+    <option value="Poverty Relief">Poverty Relief</option>
+    <option value="Community Development">Community Development</option>
+  </select>
+</div>
+            <div className="form-group">
               <label>Email</label>
               <input value={data?.user?.email || ""} disabled />
             </div>

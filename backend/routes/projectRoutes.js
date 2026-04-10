@@ -22,18 +22,22 @@ const {
   getProjectById,
   uploadImpactReport,
   getImpactReport,
+  getProjectTimeline,
+  addProjectTimeline,
 } = require("../controllers/project.controller");
 
 const Project = require("../models/Project");
-
 // ================= PUBLIC ROUTES =================
 router.get("/public", getPublicProjects);
 router.get("/:id/impact", getImpactReport);
+router.get("/:id/timeline", getProjectTimeline);
 
 // ================= NGO ROUTES =================
 router.post("/", protect, authorizeRoles("ngo"), createProject);
 router.get("/my", protect, authorizeRoles("ngo"), getMyProjects);
 router.put("/:id/submit", protect, authorizeRoles("ngo"), submitForReview);
+router.post("/:id/timeline", protect, authorizeRoles("ngo"), addProjectTimeline);
+
 
 router.put(
   "/:id/image",

@@ -114,6 +114,13 @@ const projectSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    timeline: [
+  {
+    label: { type: String, required: true },
+    date: { type: String, default: "" },
+    done: { type: Boolean, default: false },
+  },
+],
 
     impactReport: {
   beneficiaries: { type: String, default: "" },

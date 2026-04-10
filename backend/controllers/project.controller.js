@@ -31,7 +31,7 @@ exports.createProject = async (req, res) => {
 
     const populatedProject = await Project.findById(project._id).populate(
       "ngo",
-      "name organizationName category verified verificationStatus"
+      "name organizationName category mainNiche verified verificationStatus"
     );
 
     return res.status(201).json(populatedProject);
@@ -51,7 +51,10 @@ exports.getMyProjects = async (req, res) => {
     }
 
     const projects = await Project.find({ ngo: ngoProfile._id })
-      .populate("ngo", "name organizationName category verified verificationStatus")
+      .populate(
+        "ngo",
+        "name organizationName category mainNiche verified verificationStatus"
+      )
       .sort({ createdAt: -1 });
 
     const now = new Date();
@@ -75,7 +78,10 @@ exports.getMyProjects = async (req, res) => {
     }
 
     const refreshedProjects = await Project.find({ ngo: ngoProfile._id })
-      .populate("ngo", "name organizationName category verified verificationStatus")
+      .populate(
+        "ngo",
+        "name organizationName category mainNiche verified verificationStatus"
+      )
       .sort({ createdAt: -1 });
 
     return res.json(refreshedProjects);
@@ -125,7 +131,7 @@ exports.submitForReview = async (req, res) => {
 
     const populatedProject = await Project.findById(project._id).populate(
       "ngo",
-      "name organizationName category verified verificationStatus"
+      "name organizationName category mainNiche verified verificationStatus"
     );
 
     return res.json({
@@ -200,7 +206,7 @@ exports.updateProject = async (req, res) => {
 
     const populatedProject = await Project.findById(project._id).populate(
       "ngo",
-      "name organizationName category verified verificationStatus"
+      "name organizationName category mainNiche verified verificationStatus"
     );
 
     return res.json(populatedProject);
@@ -263,7 +269,7 @@ exports.updateProjectLocation = async (req, res) => {
 
     const populatedProject = await Project.findById(project._id).populate(
       "ngo",
-      "name organizationName category verified verificationStatus"
+      "name organizationName category mainNiche verified verificationStatus"
     );
 
     return res.json({
@@ -272,6 +278,69 @@ exports.updateProjectLocation = async (req, res) => {
     });
   } catch (error) {
     console.error("UPDATE PROJECT LOCATION ERROR:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ================= GET PROJECT TIMELINE =================
+exports.getProjectTimeline = async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    return res.status(200).json(project.timeline || []);
+  } catch (error) {
+    console.error("GET PROJECT TIMELINE ERROR:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ================= ADD PROJECT TIMELINE =================
+exports.addProjectTimeline = async (req, res) => {
+  try {
+    const ngoProfile = await NGO.findOne({ user: req.user._id });
+
+    if (!ngoProfile) {
+      return res.status(404).json({ message: "NGO profile not found" });
+    }
+
+    const project = await Project.findById(req.params.id);
+
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    if (project.ngo.toString() !== ngoProfile._id.toString()) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+
+    const { label, date, done } = req.body;
+
+    if (!label || !label.trim()) {
+      return res.status(400).json({ message: "Timeline label is required" });
+    }
+
+    if (!project.timeline) {
+      project.timeline = [];
+    }
+
+    project.timeline.push({
+      label: label.trim(),
+      date: date || "",
+      done: !!done,
+    });
+
+    await project.save();
+
+    return res.status(201).json({
+      message: "Timeline item added successfully",
+      timeline: project.timeline,
+    });
+  } catch (error) {
+    console.error("ADD PROJECT TIMELINE ERROR:", error);
     return res.status(500).json({ message: "Server error" });
   }
 };
@@ -334,7 +403,7 @@ exports.pauseProject = async (req, res) => {
 
     const populatedProject = await Project.findById(project._id).populate(
       "ngo",
-      "name organizationName category verified verificationStatus"
+      "name organizationName category mainNiche verified verificationStatus"
     );
 
     return res.json(populatedProject);
@@ -369,7 +438,7 @@ exports.resumeProject = async (req, res) => {
 
     const populatedProject = await Project.findById(project._id).populate(
       "ngo",
-      "name organizationName category verified verificationStatus"
+      "name organizationName category mainNiche verified verificationStatus"
     );
 
     return res.json(populatedProject);
@@ -395,7 +464,10 @@ exports.adminGetAllProjects = async (req, res) => {
     }
 
     const projects = await Project.find(filter)
-      .populate("ngo", "name organizationName category verified verificationStatus")
+      .populate(
+        "ngo",
+        "name organizationName category mainNiche verified verificationStatus"
+      )
       .populate("reviewedBy", "name email")
       .sort({ createdAt: -1 });
 
@@ -455,7 +527,7 @@ exports.updateProjectStatus = async (req, res) => {
 
     const populatedProject = await Project.findById(project._id).populate(
       "ngo",
-      "name organizationName category verified verificationStatus"
+      "name organizationName category mainNiche verified verificationStatus"
     );
 
     return res.status(200).json({
@@ -537,11 +609,52 @@ exports.getFlaggedProjects = async (req, res) => {
 // ================= PUBLIC GET APPROVED / ACTIVE PROJECTS =================
 exports.getPublicProjects = async (req, res) => {
   try {
-    const projects = await Project.find({ status: "active" })
-      .populate("ngo", "name organizationName category verified verificationStatus")
+    const now = new Date();
+
+    const projects = await Project.find({
+      status: { $in: ["active", "completed"] },
+    })
+      .populate(
+        "ngo",
+        "name organizationName category mainNiche verified verificationStatus"
+      )
       .sort({ createdAt: -1 });
 
-    return res.json(projects);
+    for (const project of projects) {
+      let changed = false;
+
+      if (
+        project.status !== "completed" &&
+        Number(project.raisedAmount || 0) >= Number(project.goalAmount || 0)
+      ) {
+        project.status = "completed";
+        changed = true;
+      }
+
+      if (
+        project.status === "active" &&
+        project.endDate &&
+        new Date(project.endDate) < now
+      ) {
+        project.status = "completed";
+        changed = true;
+      }
+
+      if (changed) {
+        await project.save();
+      }
+    }
+
+    const refreshedProjects = await Project.find({
+      status: { $in: ["active", "completed"] },
+    })
+      .populate(
+        "ngo",
+        "name organizationName category mainNiche verified verificationStatus"
+      )
+      .sort({ status: 1, createdAt: -1 });
+
+    return res.json(refreshedProjects);
   } catch (error) {
     console.error("GET PUBLIC PROJECTS ERROR:", error);
     return res.status(500).json({ message: "Server error" });
@@ -553,7 +666,7 @@ exports.getProjectById = async (req, res) => {
   try {
     const project = await Project.findById(req.params.id).populate(
       "ngo",
-      "name organizationName category verified verificationStatus"
+      "name organizationName category mainNiche verified verificationStatus"
     );
 
     if (!project) {

@@ -25,6 +25,7 @@ const ngoSchema = new mongoose.Schema(
     name: { type: String, required: true },
     registrationNumber: { type: String, required: true },
     category: { type: String, default: "General" },
+    mainNiche: { type: String, default: "" },
     location: { type: String, default: "" },
     phone: { type: String, default: "" },
     website: { type: String, default: "" },

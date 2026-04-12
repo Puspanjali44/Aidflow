@@ -338,7 +338,7 @@ function AdminAnalytics() {
                     <td>{project.ngoName}</td>
                     <td>{formatCurrency(project.totalAmount)}</td>
                     <td>
-                      <Link className="view-link" to={`/admin/projects/${project._id}`}>
+                      <Link className="view-link" to={`/projects/${project._id}`}>
                         Open
                       </Link>
                     </td>

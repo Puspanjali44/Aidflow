@@ -201,17 +201,63 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 .pd-tab-panel  { border-top-left-radius:0; border-top-right-radius:0; }
 
 /* UPDATE FORM */
-.pd-update-form { background:var(--green-light); border:1px solid #c8e6c9; border-radius:var(--radius); padding:20px; margin-bottom:20px; }
-.pd-update-form h3 { font-family:'Lora',serif; margin-bottom:16px; }
-.pd-update-form label { display:block; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--text-2); margin-bottom:4px; margin-top:12px; }
+/* UPDATE FORM */
+.pd-update-form {
+  background: var(--green-dark);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.pd-update-form h3 {
+  font-family: 'Lora', serif;
+  margin-bottom: 20px;
+  color: #fff;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pd-update-form label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  color: rgba(255,255,255,0.75);
+  margin-bottom: 6px;
+  margin-top: 14px;
+}
 .pd-update-form input,
 .pd-update-form textarea,
-.pd-update-form select { width:100%; padding:10px 14px; border:1.5px solid var(--border); border-radius:8px; font-family:inherit; font-size:14px; background:#fff; color:var(--text); transition:border-color .2s; }
+.pd-update-form select {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  background: rgba(255,255,255,0.10);
+  color: #fff;
+  transition: border-color .2s, background .2s;
+}
+.pd-update-form input::placeholder,
+.pd-update-form textarea::placeholder { color: rgba(237, 235, 235, 0.45); }
+.pd-update-form select option { background: var(--green-mid); color: #e69c9c; }
 .pd-update-form input:focus,
 .pd-update-form textarea:focus,
-.pd-update-form select:focus { outline:none; border-color:var(--green); }
+.pd-update-form select:focus {
+  outline: none;
+  border-color: rgba(255,255,255,0.55);
+  background: rgba(216, 226, 173, 0.15);
+}
+.pd-update-form input[type="file"] {
+  background: rgba(234, 246, 210, 0.08);
+  color: rgba(255,255,255,0.75);
+  cursor: pointer;
+}
 .pd-form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-.pd-form-actions { display:flex; gap:10px; margin-top:16px; }
+.pd-form-actions { display:flex; gap:10px; margin-top:20px; }
 .pd-mb16 { margin-bottom:16px; }
 
 /* PHOTO PREVIEW (before upload) */

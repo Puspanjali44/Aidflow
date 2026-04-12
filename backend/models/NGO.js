@@ -38,6 +38,7 @@ const ngoSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    
 
     // ================= VERIFICATION DOCUMENTS (6 required) =================
     documents: {
@@ -114,6 +115,13 @@ const ngoSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    email: {
+  type: String,
+  required: true,
+  unique: true,
+  trim: true,
+  lowercase: true,
+},
 
     // ================= BANK DETAILS =================
     bankName: {

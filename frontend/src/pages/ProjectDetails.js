@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
 import NgoLayout from "../components/NgoLayout";
-import AdminLayout from "../components/AdminLayout";
+import AdminSidebar from "../components/AdminSidebar";
 import DonateModal from "./DonateModal";
 import "./ProjectDetails.css";
 import DonorSidebar from "../components/DonorSidebar";
@@ -721,14 +721,6 @@ export default function ProjectDetails() {
               <>
                 <h1 className="pd-title">{project.title}</h1>
                 <p className="pd-desc">{project.description}</p>
-                {/* {isNGO && (
-                  <button
-                    className="pd-btn-outline"
-                    onClick={() => setEditingProject(true)}
-                  >
-                    ✏️ Edit Project
-                  </button>
-                )} */}
               </>
             )}
           </section>
@@ -1236,77 +1228,77 @@ export default function ProjectDetails() {
                 </div>
               )}
 
-             {impactReport ? (
-  <>
-    <div className="pd-impact-grid">
-      <div className="pd-impact-card">
-        <span className="pd-impact-icon">📄</span>
-        <span className="pd-impact-label">PDF Impact Report</span>
-        {impactReport.pdfUploaded && impactReport.pdf ? (
-          <a
-            href={`${BASE}/uploads/${impactReport.pdf}`}
-            target="_blank"
-            rel="noreferrer"
-            className="pd-impact-sub color-green"
-            style={{ textDecoration: "none", fontWeight: 700 }}
-          >
-            View PDF ↗
-          </a>
-        ) : (
-          <span className="pd-impact-sub color-gray">Not uploaded</span>
-        )}
-      </div>
+              {impactReport ? (
+                <>
+                  <div className="pd-impact-grid">
+                    <div className="pd-impact-card">
+                      <span className="pd-impact-icon">📄</span>
+                      <span className="pd-impact-label">PDF Impact Report</span>
+                      {impactReport.pdfUploaded && impactReport.pdf ? (
+                        <a
+                          href={`${BASE}/uploads/${impactReport.pdf}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="pd-impact-sub color-green"
+                          style={{ textDecoration: "none", fontWeight: 700 }}
+                        >
+                          View PDF ↗
+                        </a>
+                      ) : (
+                        <span className="pd-impact-sub color-gray">Not uploaded</span>
+                      )}
+                    </div>
 
-      <div className="pd-impact-card">
-        <span className="pd-impact-icon">🖼️</span>
-        <span className="pd-impact-label">Before/After Photos</span>
-        <span className="pd-impact-sub color-blue">
-          {impactReport.photoCount
-            ? `${impactReport.photoCount} Photos`
-            : "No photos"}
-        </span>
-      </div>
+                    <div className="pd-impact-card">
+                      <span className="pd-impact-icon">🖼️</span>
+                      <span className="pd-impact-label">Before/After Photos</span>
+                      <span className="pd-impact-sub color-blue">
+                        {impactReport.photoCount
+                          ? `${impactReport.photoCount} Photos`
+                          : "No photos"}
+                      </span>
+                    </div>
 
-      <ImpactCard
-        icon="👥"
-        label="Beneficiaries Reached"
-        sub={impactReport.beneficiaries || "—"}
-        color="purple"
-      />
+                    <ImpactCard
+                      icon="👥"
+                      label="Beneficiaries Reached"
+                      sub={impactReport.beneficiaries || "—"}
+                      color="purple"
+                    />
 
-      <ImpactCard
-        icon="💬"
-        label="Testimonials Collected"
-        sub={impactReport.testimonials || "—"}
-        color="amber"
-      />
-    </div>
+                    <ImpactCard
+                      icon="💬"
+                      label="Testimonials Collected"
+                      sub={impactReport.testimonials || "—"}
+                      color="amber"
+                    />
+                  </div>
 
-    {impactReport.photos?.length > 0 && (
-      <div style={{ marginTop: "20px" }}>
-        <h3 className="pd-section-title">Proof Photos</h3>
-        <div className="pd-photo-grid">
-          {impactReport.photos.map((photo, index) => (
-            <img
-              key={photo}
-              src={imgUrl(photo)}
-              alt={`impact-${index + 1}`}
-              className="pd-photo-thumb clickable"
-              onClick={() =>
-                setImgModal({ photos: impactReport.photos, idx: index })
-              }
-              onError={(e) => {
-                e.target.style.display = "none";
-              }}
-            />
-          ))}
-        </div>
-      </div>
-    )}
-  </>
-) : (
-  <p className="pd-empty">No impact report available yet.</p>
-)}
+                  {impactReport.photos?.length > 0 && (
+                    <div style={{ marginTop: "20px" }}>
+                      <h3 className="pd-section-title">Proof Photos</h3>
+                      <div className="pd-photo-grid">
+                        {impactReport.photos.map((photo, index) => (
+                          <img
+                            key={photo}
+                            src={imgUrl(photo)}
+                            alt={`impact-${index + 1}`}
+                            className="pd-photo-thumb clickable"
+                            onClick={() =>
+                              setImgModal({ photos: impactReport.photos, idx: index })
+                            }
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="pd-empty">No impact report available yet.</p>
+              )}
             </section>
           )}
 
@@ -1515,14 +1507,25 @@ export default function ProjectDetails() {
     </div>
   );
 
-  if (isNGO) return <NgoLayout>{pageContent}</NgoLayout>;
-  if (isAdmin) return <AdminLayout>{pageContent}</AdminLayout>;
+  if (isNGO) {
+    return <NgoLayout>{pageContent}</NgoLayout>;
+  }
+
+  if (isAdmin) {
+    return (
+      <div className="admin-container">
+        <AdminSidebar />
+        <div className="admin-main">{pageContent}</div>
+      </div>
+    );
+  }
+
   return (
-  <div style={{ display: "flex", minHeight: "100vh", background: "#faf8f4" }}>
-    <DonorSidebar />
-    <div style={{ flex: 1 }}>{pageContent}</div>
-  </div>
-);
+    <div style={{ display: "flex", minHeight: "100vh", background: "#faf8f4" }}>
+      <DonorSidebar />
+      <div style={{ flex: 1 }}>{pageContent}</div>
+    </div>
+  );
 }
 
 function UpdateCard({ update: u, isNGO, onEdit, onDelete, onOpenPhoto }) {

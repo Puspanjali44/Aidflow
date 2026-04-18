@@ -7,7 +7,7 @@ const navItems = [
   { to: "/admin/ngo-verification",  end: false, icon: "🏢", label: "NGO Verification" },
   { to: "/admin/project-approval",  end: false, icon: "📋", label: "Project Approval" },
   { to: "/admin/analytics",         end: false, icon: "📈", label: "Analytics"        },
-  { to: "/admin/settings",          end: false, icon: "⚙️", label: "Settings"         },
+  ,
 ];
 
 function AdminSidebar() {
@@ -50,7 +50,7 @@ function AdminSidebar() {
 
       {/* LOGOUT */}
       <button className="logout-btn" onClick={handleLogout}>
-        🚪 Logout
+         Logout
       </button>
 
     </div>

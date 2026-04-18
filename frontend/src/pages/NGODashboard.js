@@ -28,17 +28,16 @@ function NGODashboard() {
   const [loading, setLoading] = useState(true);
 
   const [showNotifications, setShowNotifications] = useState(false);
-  const [readNotifications, setReadNotifications] = useState(() => {
-    const saved = localStorage.getItem("ngoReadNotifications");
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [donationNotifications, setDonationNotifications] = useState(() => {
-  const saved = localStorage.getItem("ngoDonationNotifications");
-  return saved ? JSON.parse(saved) : [];
-});
+  const [readNotifications, setReadNotifications] = useState([]);
+  const [donationNotifications, setDonationNotifications] = useState([]);
 
   const navigate = useNavigate();
   const notificationRef = useRef(null);
+
+  const ngoStorageKeyBase = profile?._id || "anonymous";
+  const readNotificationsKey = `ngoReadNotifications_${ngoStorageKeyBase}`;
+  const donationNotificationsKey = `ngoDonationNotifications_${ngoStorageKeyBase}`;
+  const donationSnapshotKey = `ngoProjectDonationSnapshot_${ngoStorageKeyBase}`;
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -58,17 +57,30 @@ function NGODashboard() {
   }, []);
 
   useEffect(() => {
+    if (!profile?._id) return;
+
+    const savedRead = localStorage.getItem(readNotificationsKey);
+    const savedDonation = localStorage.getItem(donationNotificationsKey);
+
+    setReadNotifications(savedRead ? JSON.parse(savedRead) : []);
+    setDonationNotifications(savedDonation ? JSON.parse(savedDonation) : []);
+  }, [profile?._id, readNotificationsKey, donationNotificationsKey]);
+
+  useEffect(() => {
+    if (!profile?._id) return;
     localStorage.setItem(
-      "ngoReadNotifications",
+      readNotificationsKey,
       JSON.stringify(readNotifications)
     );
-  }, [readNotifications]);
+  }, [profile?._id, readNotifications, readNotificationsKey]);
+
   useEffect(() => {
-  localStorage.setItem(
-    "ngoDonationNotifications",
-    JSON.stringify(donationNotifications)
-  );
-}, [donationNotifications]);
+    if (!profile?._id) return;
+    localStorage.setItem(
+      donationNotificationsKey,
+      JSON.stringify(donationNotifications)
+    );
+  }, [profile?._id, donationNotifications, donationNotificationsKey]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -125,10 +137,10 @@ function NGODashboard() {
     "";
 
   useEffect(() => {
-    if (!projects.length) return;
+    if (!profile?._id || !projects.length) return;
 
     const previousSnapshot = JSON.parse(
-      localStorage.getItem("ngoProjectDonationSnapshot") || "{}"
+      localStorage.getItem(donationSnapshotKey) || "{}"
     );
 
     const newDonationItems = [];
@@ -147,7 +159,7 @@ function NGODashboard() {
 
       if (donorIncrease > 0 || amountIncrease > 0) {
         newDonationItems.push({
-          id: `donation-${project._id}-${currentDonors}-${currentRaised}`,
+          id: `donation-${profile._id}-${project._id}-${currentDonors}-${currentRaised}`,
           type: "success",
           title: "New donation received",
           message:
@@ -181,10 +193,10 @@ function NGODashboard() {
     });
 
     localStorage.setItem(
-      "ngoProjectDonationSnapshot",
+      donationSnapshotKey,
       JSON.stringify(nextSnapshot)
     );
-  }, [projects]);
+  }, [projects, profile?._id, donationSnapshotKey]);
 
   const notifications = useMemo(() => {
     const items = [];
@@ -203,7 +215,7 @@ function NGODashboard() {
     projects.forEach((project) => {
       if (project.status === "under_review") {
         items.push({
-          id: `project-review-${project._id}`,
+          id: `project-review-${profile?._id}-${project._id}`,
           type: "info",
           title: "Project under review",
           message: `${project.title} is waiting for admin approval.`,
@@ -214,7 +226,7 @@ function NGODashboard() {
 
       if (project.status === "rejected") {
         items.push({
-          id: `project-rejected-${project._id}`,
+          id: `project-rejected-${profile?._id}-${project._id}`,
           type: "danger",
           title: "Project rejected",
           message: `${project.title} was rejected by admin.`,
@@ -225,7 +237,7 @@ function NGODashboard() {
 
       if (project.status === "paused") {
         items.push({
-          id: `project-paused-${project._id}`,
+          id: `project-paused-${profile?._id}-${project._id}`,
           type: "warning",
           title: "Project paused",
           message: `${project.title} is currently paused.`,
@@ -236,7 +248,7 @@ function NGODashboard() {
 
       if (project.status === "completed") {
         items.push({
-          id: `project-completed-${project._id}`,
+          id: `project-completed-${profile?._id}-${project._id}`,
           type: "success",
           title: "Project completed",
           message: `${project.title} has reached its goal.`,
@@ -557,14 +569,6 @@ function NGODashboard() {
                   <span className="info-label">Reg. Number</span>
                   <span className="info-val">{profile?.registrationNumber || "—"}</span>
                 </div>
-                {/* <div className="info-row">
-                  <span className="info-label">Established</span>
-                  <span className="info-val">{profile?.establishedYear || "—"}</span>
-                </div> */}
-                {/* <div className="info-row">
-                  <span className="info-label">Website</span>
-                  <span className="info-val">{profile?.website || "—"}</span>
-                </div> */}
                 <div className="info-row">
                   <span className="info-label">Bank</span>
                   <span className="info-val">{profile?.bankName || "—"}</span>
@@ -622,7 +626,7 @@ function NGODashboard() {
                 />
                 <span className="account-status-label">
                   {profile?.accountStatus === "active"
-                    ? "Active — NGO is live"
+                    ? "Active - NGO is live"
                     : profile?.accountStatus === "paused"
                     ? "Paused"
                     : profile?.accountStatus === "deactivated"

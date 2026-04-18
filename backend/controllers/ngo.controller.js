@@ -22,27 +22,28 @@ exports.getMyProfile = async (req, res) => {
 // ================= UPDATE NGO PROFILE =================
 exports.updateProfile = async (req, res) => {
   try {
-    const ngo = await NGO.findOne({ user: req.user._id });
+    const ngo = await NGO.findOne({ user: req.user._id }).populate("user", "email");
+
     if (!ngo) {
       return res.status(404).json({ message: "NGO profile not found" });
     }
 
     const fields = [
-  "name",
-  "registrationNumber",
-  "category",
-  "mainNiche",
-  "location",
-  "phone",
-  "website",
-  "description",
-  "mission",
-  "establishedYear",
-  "bankName",
-  "accountNumber",
-  "accountName",
-  "branch",
-];
+      "name",
+      "registrationNumber",
+      "category",
+      "mainNiche",
+      "location",
+      "phone",
+      "website",
+      "description",
+      "mission",
+      "establishedYear",
+      "bankName",
+      "accountNumber",
+      "accountName",
+      "branch",
+    ];
 
     fields.forEach((field) => {
       if (req.body[field] !== undefined) {
@@ -66,24 +67,29 @@ exports.updateProfile = async (req, res) => {
       }
     });
 
+    // Preserve required email so validation does not fail
+    ngo.email = req.body.email || ngo.email || ngo.user?.email || "";
+
     try {
       const fraudResult = calculateNgoFraudScore(ngo);
       ngo.fraudScore = fraudResult.score;
       ngo.riskReasons = fraudResult.reasons;
-    } catch(e) {
+    } catch (e) {
       ngo.fraudScore = 0;
-      ngo.riskReasons = ['Fraud service error'];
+      ngo.riskReasons = ["Fraud service error"];
     }
 
     await ngo.save();
 
-    return res.json({
+    const updatedNgo = await NGO.findById(ngo._id).populate("user", "email");
+
+    return res.status(200).json({
       message: "Profile updated successfully",
-      ngo,
+      ngo: updatedNgo,
     });
   } catch (error) {
     console.error("UPDATE NGO PROFILE ERROR:", error);
-    return res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: error.message || "Server error" });
   }
 };
 

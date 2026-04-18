@@ -47,22 +47,36 @@ function NgoSettings() {
   const handleChange = (field, value) => 
     setData(prev => ({ ...prev, [field]: value }));
 
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      await fetch(`${API}/api/ngo/profile`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", ...headers },
-        body: JSON.stringify(data)
-      });
-      alert("Settings updated successfully");
-      fetchSettings();
-    } catch (error) {
-      console.error("Save error:", error);
-    } finally {
-      setSaving(false);
+ const handleSave = async () => {
+  try {
+    setSaving(true);
+
+    const payload = {
+      ...data,
+      email: data?.email || data?.user?.email || "",
+    };
+
+    const res = await fetch(`${API}/api/ngo/profile`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      throw new Error(result.message || "Failed to update settings");
     }
-  };
+
+    alert("Settings updated successfully");
+    fetchSettings();
+  } catch (error) {
+    console.error("Save error:", error);
+    alert(error.message || "Failed to save settings");
+  } finally {
+    setSaving(false);
+  }
+};
 
   const handlePause = async () => {
     await fetch(`${API}/api/ngo/pause`, { method: "PUT", headers });

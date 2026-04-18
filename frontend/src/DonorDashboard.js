@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DonorSidebar from "./components/DonorSidebar";
 import "./Dashboard.css";
@@ -273,6 +273,85 @@ function DonorDashboard() {
     setReadNotificationIds(projectNotifications.map((n) => n.id));
   };
 
+  const trendData = useMemo(() => {
+    const now = new Date();
+    const months = [];
+
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({
+        key: `${d.getFullYear()}-${d.getMonth()}`,
+        label: d.toLocaleString("en-US", { month: "short" }),
+        amount: 0,
+      });
+    }
+
+    donations.forEach((donation) => {
+      const donationDate = donation.createdAt
+        ? new Date(donation.createdAt)
+        : null;
+
+      if (!donationDate || Number.isNaN(donationDate.getTime())) return;
+
+      const key = `${donationDate.getFullYear()}-${donationDate.getMonth()}`;
+      const monthItem = months.find((m) => m.key === key);
+
+      if (monthItem) {
+        monthItem.amount += Number(donation.amount) || 0;
+      }
+    });
+
+    return months;
+  }, [donations]);
+
+  const maxTrendAmount = Math.max(...trendData.map((item) => item.amount), 0);
+
+  const chartPath = useMemo(() => {
+    const width = 600;
+    const height = 200;
+    const paddingX = 20;
+    const paddingTop = 20;
+    const paddingBottom = 20;
+
+    if (!trendData.length) return "";
+
+    const usableWidth = width - paddingX * 2;
+    const usableHeight = height - paddingTop - paddingBottom;
+
+    const points = trendData.map((item, index) => {
+      const x =
+        paddingX +
+        (trendData.length === 1
+          ? usableWidth / 2
+          : (index * usableWidth) / (trendData.length - 1));
+
+      const normalized =
+        maxTrendAmount > 0 ? item.amount / maxTrendAmount : 0;
+
+      const y = paddingTop + usableHeight - normalized * usableHeight;
+
+      return { x, y };
+    });
+
+    return points
+      .map((point, index) =>
+        `${index === 0 ? "M" : "L"}${point.x},${point.y}`
+      )
+      .join(" ");
+  }, [trendData, maxTrendAmount]);
+
+  const areaPath = useMemo(() => {
+    const width = 600;
+    const height = 200;
+
+    if (!chartPath || !trendData.length) return "";
+
+    const lastX = 600 - 20;
+    const firstX = 20;
+
+    return `${chartPath} L${lastX},${height} L${firstX},${height} Z`;
+  }, [chartPath, trendData]);
+
   return (
     <div className="dashboard-wrapper">
       <DonorSidebar />
@@ -504,33 +583,46 @@ function DonorDashboard() {
               <h3>Donation Trends</h3>
               <span className="chart-badge">Last 6 months</span>
             </div>
+
             <div className="chart-placeholder">
-              <svg viewBox="0 0 600 200" className="trend-line">
-                <defs>
-                  <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#1e5631" stopOpacity="0.15" />
-                    <stop offset="100%" stopColor="#1e5631" stopOpacity="0.01" />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M0,180 C50,175 80,160 120,140 C160,120 200,90 250,85 C300,80 340,70 400,50 C440,40 500,30 560,25 L600,20 L600,200 L0,200 Z"
-                  fill="url(#fillGrad)"
-                />
-                <path
-                  d="M0,180 C50,175 80,160 120,140 C160,120 200,90 250,85 C300,80 340,70 400,50 C440,40 500,30 560,25 L600,20"
-                  fill="none"
-                  stroke="#1e5631"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                />
-              </svg>
+              {donationCount === 0 ? (
+                <div
+                  style={{
+                    height: "200px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#6b7280",
+                    fontWeight: 500,
+                  }}
+                >
+                  No donation data yet
+                </div>
+              ) : (
+                <svg viewBox="0 0 600 200" className="trend-line">
+                  <defs>
+                    <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#1e5631" stopOpacity="0.15" />
+                      <stop offset="100%" stopColor="#1e5631" stopOpacity="0.01" />
+                    </linearGradient>
+                  </defs>
+
+                  <path d={areaPath} fill="url(#fillGrad)" />
+                  <path
+                    d={chartPath}
+                    fill="none"
+                    stroke="#1e5631"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+
               <div className="chart-labels">
-                <span>Jun</span>
-                <span>Jul</span>
-                <span>Aug</span>
-                <span>Sep</span>
-                <span>Oct</span>
-                <span>Nov</span>
+                {trendData.map((item) => (
+                  <span key={item.key}>{item.label}</span>
+                ))}
               </div>
             </div>
           </div>

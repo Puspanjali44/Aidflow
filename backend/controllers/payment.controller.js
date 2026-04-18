@@ -9,6 +9,12 @@ const KHALTI_BASE_URL =
   process.env.KHALTI_BASE_URL || "https://dev.khalti.com/api/v2";
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
+const getKhaltiPaymentPageUrl = (pidx) => {
+  return KHALTI_BASE_URL.includes("dev.khalti.com")
+    ? `https://test-pay.khalti.com/?pidx=${pidx}`
+    : `https://pay.khalti.com/?pidx=${pidx}`;
+};
+
 exports.initiateKhaltiPayment = async (req, res) => {
   try {
     if (!KHALTI_SECRET_KEY) {
@@ -137,7 +143,7 @@ exports.initiateKhaltiPayment = async (req, res) => {
       customer_info: {
         name: donorName || "Donor",
         email: email || "donor@example.com",
-        phone: "9800000001",
+        phone: req.body.phone || "9800000001",
       },
     };
 
@@ -156,9 +162,13 @@ exports.initiateKhaltiPayment = async (req, res) => {
       }
     );
 
+    console.log("KHALTI INITIATE RESPONSE:", response.data);
+
+    const khaltiPaymentUrl = getKhaltiPaymentPageUrl(response.data.pidx);
+
     await Donation.findByIdAndUpdate(pendingDonation._id, {
       khaltiPidx: response.data.pidx,
-      khaltiPaymentUrl: response.data.payment_url,
+      khaltiPaymentUrl: khaltiPaymentUrl,
       providerReference: response.data.pidx,
     });
 
@@ -169,7 +179,7 @@ exports.initiateKhaltiPayment = async (req, res) => {
     }
 
     return res.status(200).json({
-      payment_url: response.data.payment_url,
+      payment_url: khaltiPaymentUrl,
       pidx: response.data.pidx,
       donationId: pendingDonation._id,
       recurringDonationId,
@@ -267,7 +277,9 @@ exports.verifyKhaltiPayment = async (req, res) => {
           });
         }
 
-        const project = await Project.findById(donation.project._id || donation.project);
+        const project = await Project.findById(
+          donation.project._id || donation.project
+        );
 
         if (project) {
           project.raisedAmount =

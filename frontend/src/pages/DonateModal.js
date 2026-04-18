@@ -41,6 +41,7 @@ export default function DonateModal({ project, onClose }) {
     lastName: "",
     receiptName: "",
     email: "",
+    phone: "",
     message: "",
     anonymous: false,
   });
@@ -73,6 +74,7 @@ export default function DonateModal({ project, onClose }) {
           lastName: prev.lastName || lastName,
           receiptName: prev.receiptName || fullName,
           email: prev.email || user?.email || "",
+          phone: prev.phone || user?.phone || "9800000005",
         }));
       } catch (error) {
         console.error("Failed to fetch logged-in user:", error);
@@ -109,6 +111,9 @@ export default function DonateModal({ project, onClose }) {
       e.email = "Valid email required";
     }
 
+    if (!/^\d{10}$/.test(form.phone.trim())) {
+  e.phone = "Valid 10-digit phone required";
+}
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -149,6 +154,7 @@ export default function DonateModal({ project, onClose }) {
     receiptName:
       form.receiptName.trim() || `${form.firstName} ${form.lastName}`.trim(),
     email: form.email.trim(),
+    phone: form.phone.trim(),
     message: form.message.trim(),
     anonymous: form.anonymous,
   });
@@ -452,6 +458,17 @@ export default function DonateModal({ project, onClose }) {
             </div>
 
             <div className="dm-field">
+              <input
+                className={`dm-input ${errors.phone ? "error" : ""}`}
+                type="text"
+                placeholder="Phone Number *"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              />
+              {errors.phone && <span className="dm-err">{errors.phone}</span>}
+            </div>
+
+            <div className="dm-field">
               <textarea
                 className="dm-input dm-textarea"
                 placeholder="Your Message (optional)"
@@ -513,6 +530,11 @@ export default function DonateModal({ project, onClose }) {
               <div className="dm-summary-row">
                 <span>Email</span>
                 <strong>{form.email}</strong>
+              </div>
+
+              <div className="dm-summary-row">
+                <span>Phone</span>
+                <strong>{form.phone}</strong>
               </div>
 
               <div className="dm-summary-row">

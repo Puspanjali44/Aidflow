@@ -1,97 +1,177 @@
 /* ══════════════════════════════════════
-   AdminSidebar.css  –  AidFlow Admin
+   AdminSidebar.css – AidFlow Admin
+   Matched with DonorSidebar style
    ══════════════════════════════════════ */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
 
 .admin-sidebar {
-  width: 240px;
+  width: 260px;                    /* Slightly wider for better feel */
   min-height: 100vh;
+  height: 100vh;
   background: #1a3a2a;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   flex-shrink: 0;
-  font-family: 'DM Sans', sans-serif;
   position: sticky;
   top: 0;
-  height: 100vh;
   overflow-y: auto;
+  font-family: 'DM Sans', sans-serif;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* ── LOGO ── */
-.admin-logo {
-  padding: 24px 20px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-.admin-logo h2 {
-  font-size: 18px;
-  font-weight: 800;
-  color: #ffffff;
-  letter-spacing: -0.3px;
-  line-height: 1.2;
-}
-.admin-logo p {
-  font-size: 11px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.4);
-  text-transform: uppercase;
-  letter-spacing: 1.2px;
-  margin-top: 3px;
+/* Hide scrollbar */
+.admin-sidebar::-webkit-scrollbar {
+  display: none;
 }
 
-/* ── NAV ── */
-.admin-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 14px 10px;
-}
-
-.admin-link {
+/* ── BRAND / LOGO ── */
+.admin-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-radius: 9px;
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.65);
-  transition: background 0.18s, color 0.18s;
-  white-space: nowrap;
-}
-.admin-link:hover {
-  background: rgba(255, 255, 255, 0.07);
-  color: #ffffff;
-}
-.admin-link.active {
-  background: rgba(255, 255, 255, 0.13);
-  color: #ffffff;
-  font-weight: 700;
-  box-shadow: inset 3px 0 0 #6fcf97;
+  gap: 11px;
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* ── LOGOUT ── */
-.logout-btn {
-  margin: 12px 10px 20px;
+.admin-logo-box {
+  width: 38px;
+  height: 38px;
+  background: #ffffff;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 11px 16px;
-  border-radius: 9px;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.55);
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  width: calc(100% - 20px);
+  color: #1a3a2a;
+  font-weight: 800;
+  font-size: 20px;
+  flex-shrink: 0;
 }
-.logout-btn:hover {
-  background: rgba(220, 38, 38, 0.15);
-  border-color: rgba(220, 38, 38, 0.5);
+
+.admin-brand-name {
+  font-size: 19px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.4px;
+  line-height: 1.1;
+}
+
+.admin-portal-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 2px;
+}
+
+/* ── NAV SECTION ── */
+.admin-nav-section {
+  flex: 1;
+  padding: 16px 14px 10px;
+}
+
+.admin-nav-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 0 8px;
+  margin-bottom: 10px;
+}
+
+.admin-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.admin-nav-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.admin-nav-item.active {
+  background: rgba(255, 255, 255, 0.13);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.admin-nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 4px;
+  border-radius: 0 4px 4px 0;
+  background: #6fcf97;           /* Nice green highlight */
+}
+
+/* Icon styling */
+.admin-nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0.85;
+  color: inherit;
+}
+
+.admin-nav-item.active .admin-nav-icon,
+.admin-nav-item:hover .admin-nav-icon {
+  opacity: 1;
+}
+
+/* ── FOOTER / LOGOUT ── */
+.admin-footer {
+  padding: 16px 14px 24px;
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-signout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.65);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.admin-signout:hover {
+  background: rgba(220, 38, 38, 0.12);
   color: #ff8080;
+}
+
+.admin-signout svg {
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.admin-signout:hover svg {
+  opacity: 1;
 }
